@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1226">
+  <meta name="description" content="أجرة الكورنيش: لعبة سواقة تاكسى 3D بتتلعب من المتصفح. وصّل الركاب، اكسب فلوس، واشترى عربيتك.">
+  <title>أجرة الكورنيش</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <!-- ========== HUD ========== -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="pill" id="hud-money">💰 <b>0</b></div>
+      <div class="pill" id="hud-timer">⏱ <b>6:00</b></div>
+      <div class="pill small" id="hud-day">يوم 1</div>
+      <button id="btn-pause" class="icon-btn" aria-label="إيقاف مؤقت">⏸</button>
+    </div>
+
+    <div id="card" class="card hidden">
+      <div class="card-head"><span id="card-icon">🧍</span><div><div id="card-title"></div><div id="card-sub"></div></div></div>
+      <div class="bar"><i id="card-bar"></i></div>
+      <div id="card-line" class="card-line"></div>
+    </div>
+
+    <div id="hint" class="hint hidden"></div>
+
+    <div class="hud-bottom">
+      <div id="limit" class="limit hidden"><span>60</span></div>
+      <div class="speedo"><b id="speed">0</b><small>كم/س</small></div>
+      <div class="dmg" title="حالة العربية"><span>🔧</span><div class="bar red"><i id="dmg-bar"></i></div></div>
+    </div>
+    <div id="flash" class="flash hidden">📸</div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <!-- ========== أزرار اللمس ========== -->
+  <div id="touch" class="hidden">
+    <div class="t-left">
+      <button id="t-left" class="tbtn" aria-label="شمال">◀</button>
+      <button id="t-right" class="tbtn" aria-label="يمين">▶</button>
+    </div>
+    <div class="t-right">
+      <button id="t-horn" class="tbtn small" aria-label="كلاكس">📣</button>
+      <button id="t-brake" class="tbtn brake" aria-label="فرامل">فرامل</button>
+      <button id="t-gas" class="tbtn gas" aria-label="بنزين">بنزين</button>
+    </div>
+  </div>
+
+  <!-- ========== القائمة الرئيسية ========== -->
+  <section id="screen-menu" class="screen">
+    <div class="panel menu">
+      <div class="logo">🚖</div>
+      <h1>أجرة الكورنيش</h1>
+      <p class="sub">سواق تاكسى على الكورنيش. وصّل الركاب، اجمع فلوس، واشترى عربيتك.</p>
+      <div class="status" id="menu-status"></div>
+      <button class="btn primary" id="m-start">ابدأ الوردية</button>
+      <div class="row">
+        <button class="btn" id="m-garage">🚗 الجراج</button>
+        <button class="btn" id="m-quests">🏆 المهام</button>
+        <button class="btn" id="m-settings">⚙️ الإعدادات</button>
+      </div>
+      <p class="foot">لعبة مستقلة بكود وتصميم أصلى · نسخة تجريبية</p>
+    </div>
+  </section>
+
+  <!-- ========== الجراج ========== -->
+  <section id="screen-garage" class="screen hidden">
+    <div class="panel wide">
+      <div class="panel-head">
+        <h2>الجراج</h2>
+        <div class="pill" id="garage-money"></div>
+      </div>
+      <div id="garage-list" class="garage-list"></div>
+      <button class="btn" id="g-back">رجوع</button>
+    </div>
+  </section>
+
+  <!-- ========== المهام والإنجازات ========== -->
+  <section id="screen-quests" class="screen hidden">
+    <div class="panel wide">
+      <div class="panel-head"><h2>مهام الوردية</h2></div>
+      <div id="quest-list" class="list"></div>
+      <div class="panel-head"><h2>الإنجازات</h2></div>
+      <div id="ach-list" class="list"></div>
+      <button class="btn" id="q-back">رجوع</button>
+    </div>
+  </section>
+
+  <!-- ========== الإعدادات ========== -->
+  <section id="screen-settings" class="screen hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>الإعدادات</h2></div>
+      <label class="set"><span>الصوت</span><input type="checkbox" id="s-sound"></label>
+      <label class="set"><span>الاهتزاز عند الخبط</span><input type="checkbox" id="s-vibrate"></label>
+      <label class="set"><span>بنزين أوتوماتيك (بدون ما تدوس)</span><input type="checkbox" id="s-auto"></label>
+      <label class="set"><span>حساسية الدريكسيون</span><input type="range" id="s-steer" min="0.6" max="1.5" step="0.05"></label>
+      <label class="set"><span>قوة الفرامل</span><input type="range" id="s-brake" min="0.6" max="1.4" step="0.05"></label>
+      <button class="btn danger" id="s-reset">مسح التقدم والبدء من الأول</button>
+      <button class="btn" id="s-back">رجوع</button>
+    </div>
+  </section>
+
+  <!-- ========== الشرح ========== -->
+  <section id="screen-tutorial" class="screen hidden">
+    <div class="panel">
+      <h2>إزاى تلعب</h2>
+      <ol class="howto">
+        <li>أنت سواق على تاكسى بتاع <b>المعلم</b>. فى آخر الوردية بتدفع له <b>الحساب</b> من اللى كسبته.</li>
+        <li>شوف الراكب اللى بيشاور (عمود النور الأصفر). <b>قرّب من الرصيف ووقّف</b> جنبه لحد ما يركب.</li>
+        <li>وصّله للمكان (العمود الأخضر) <b>قبل ما الوقت يخلص</b>، وسوق بنعومة عشان البقشيش.</li>
+        <li>خلى بالك من <b>الرادارات</b> وحدود السرعة، وابعد عن الخبط عشان العربية متتبهدلش.</li>
+        <li>اجمع فلوس واشترى <b>عربيتك</b> من الجراج.</li>
+      </ol>
+      <div class="keys">
+        <div><kbd>↑</kbd> / <kbd>W</kbd> بنزين</div>
+        <div><kbd>↓</kbd> / <kbd>S</kbd> / <kbd>مسافة</kbd> فرامل</div>
+        <div><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> دريكسيون</div>
+        <div><kbd>H</kbd> كلاكس · <kbd>Esc</kbd> إيقاف</div>
+      </div>
+      <button class="btn primary" id="tu-go">يلا بينا</button>
+    </div>
+  </section>
+
+  <!-- ========== إيقاف مؤقت ========== -->
+  <section id="screen-pause" class="screen hidden">
+    <div class="panel">
+      <h2>إيقاف مؤقت</h2>
+      <button class="btn primary" id="p-resume">كمّل</button>
+      <button class="btn" id="p-end">إنهاء الوردية وحساب اليوم</button>
+      <button class="btn" id="p-sound">الصوت</button>
+    </div>
+  </section>
+
+  <!-- ========== ملخص الوردية ========== -->
+  <section id="screen-summary" class="screen hidden">
+    <div class="panel wide">
+      <h2 id="sum-title">الوردية خلصت</h2>
+      <div id="sum-rows" class="sum-rows"></div>
+      <div id="sum-extra" class="list"></div>
+      <div class="row">
+        <button class="btn primary" id="su-next">وردية جديدة</button>
+        <button class="btn" id="su-garage">🚗 الجراج</button>
+        <button class="btn" id="su-menu">الرئيسية</button>
+      </div>
+    </div>
+  </section>
+
+  <noscript><div class="panel noscript">فعّل جافاسكريبت عشان تلعب.</div></noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
