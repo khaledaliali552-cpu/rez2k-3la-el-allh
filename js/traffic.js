@@ -2,25 +2,29 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { buildVehicle } from './vehicles.js';
 import { LANE_X, ONC_X, place, headingYaw, dcx, trafficDensity } from './world.js';
-import { rand, pick, clamp } from './data.js';
+import { rand, pick, clamp, pickWeighted } from './data.js';
 
-const KINDS = [
-  { kind: 'taxi', weight: 4, v: [17, 26], colors: [0xf2b21b, 0xf2b21b, 0xe8a317, 0xf4f4f0] },
-  { kind: 'sedan', weight: 4, v: [16, 28], colors: [0xb7bcc4, 0xf1f1ee, 0x24262b, 0x2a5bd7, 0xc4302b, 0x7a8a99] },
-  { kind: 'hatch', weight: 2, v: [15, 26], colors: [0xf1f1ee, 0xc4302b, 0x2f8f5b, 0xb7bcc4] },
-  { kind: 'minibus', weight: 3, v: [14, 23], colors: [0x2a5bd7, 0xc4302b, 0x2f8f5b], cut: true },
-  { kind: 'tuktuk', weight: 1.3, v: [6, 10], colors: [0x2f8f5b, 0xe9c46a, 0xc4302b] },
-  { kind: 'truck', weight: 1.2, v: [10, 15], colors: [0x6b8e23, 0x5c6b7a, 0x9c4a2a] },
-];
-const TOTAL_W = KINDS.reduce((a, k) => a + k.weight, 0);
+const W = 0xf1f1ee;
+const VEH = {
+  luxury: { v: [20, 30], colors: [0x24262b, 0x24262b, 0x1b1d22, 0xf1f1ee, 0x7a8a99] },
+  suv: { v: [19, 29], colors: [0x1b1d22, 0x1b1d22, 0x24262b, W, 0x8a8f94] },
+  sedan: { v: [16, 28], colors: [0xb7bcc4, 0xb7bcc4, W, 0x24262b, 0x2a5bd7, 0xc4302b, 0x7a8a99] },
+  taxi: { v: [17, 26], colors: [0xf2b21b, 0xf2b21b, 0xe8a317, 0xf4f4f0] },
+  hatch: { v: [15, 26], colors: [W, 0xc4302b, 0x2f8f5b, 0xb7bcc4, 0x2a5bd7] },
+  microbus: { v: [14, 23], colors: [W, W, W, 0xf4f4f0], accents: [0x2a5bd7, 0xc4302b, 0x2f8f5b], cut: true },
+  tonaya: { v: [13, 21], colors: [W, W, 0xe9e6dc, 0xb7bcc4], slow: true },
+  tuktuk: { v: [6, 10], colors: [0xc4302b, 0xc4302b, 0x2f8f5b, 0xe9c46a], slow: true },
+  pickup: { v: [13, 21], colors: [W, W, 0xb7bcc4, 0xc4302b], accents: [W, 0x8a6a44, 0x2a5bd7], slow: true },
+  boxtruck: { v: [12, 19], colors: [W, 0xc4302b, 0x2a5bd7], accents: [W, W, 0xdcdcd0, 0xc4302b], slow: true },
+  truck: { v: [10, 15], colors: [0xc4302b, 0xc4302b, 0x2a5bd7, 0x2f8f5b], accents: [0x2a5bd7, 0xc4302b, 0x9c4a2a, 0x5c6b7a], slow: true },
+};
+const DEFAULT_MIX = { sedan: 4, taxi: 4, hatch: 2, microbus: 3, tuktuk: 1, truck: 1 };
 
-function pickKind() {
-  let r = Math.random() * TOTAL_W;
-  for (const k of KINDS) {
-    r -= k.weight;
-    if (r <= 0) return k;
-  }
-  return KINDS[0];
+function pickKind(mix, noSlow = false) {
+  const m = {};
+  for (const [k, w] of Object.entries(mix)) if (VEH[k] && (!noSlow || k !== 'tuktuk')) m[k] = w;
+  const kind = pickWeighted(m);
+  return { kind, ...VEH[kind] };
 }
 
 export class Traffic {
@@ -28,6 +32,15 @@ export class Traffic {
     this.scene = scene;
     this.cars = [];
     this.decor = [];
+    this.mix = DEFAULT_MIX;
+    this.density = 1;
+    this.speed = 1;
+  }
+
+  setRoad(road) {
+    this.mix = road.traffic.mix;
+    this.density = road.traffic.density;
+    this.speed = road.traffic.speed;
   }
 
   clear() {
@@ -45,9 +58,8 @@ export class Traffic {
   }
 
   _spawnDecor(playerS, initial = false) {
-    const k = pickKind();
-    if (k.kind === 'tuktuk') return this._spawnDecor(playerS, initial);
-    const model = buildVehicle(k.kind, pick(k.colors));
+    const k = pickKind(this.mix, true);
+    const model = buildVehicle(k.kind, pick(k.colors), k.accents ? { accent: pick(k.accents) } : {});
     this.scene.add(model.group);
     const d = {
       model,
@@ -68,17 +80,17 @@ export class Traffic {
   }
 
   _spawnCar(playerS, s, forcedLane) {
-    const k = pickKind();
+    const k = pickKind(this.mix);
     const lane = forcedLane == null ? Math.floor(Math.random() * 4) : forcedLane;
-    // التوك توك مش بيمشى فى الحارة الشمال خالص
-    const useLane = k.kind === 'tuktuk' || k.kind === 'truck' ? Math.max(2, lane) : lane;
+    // العربيات البطيئة بتمشى فى اليمين
+    const useLane = k.slow ? Math.max(2, lane) : lane;
     const x = LANE_X[useLane];
     if (!this._free(s, x, null, 22)) return null;
-    const model = buildVehicle(k.kind, pick(k.colors));
+    const model = buildVehicle(k.kind, pick(k.colors), k.accents ? { accent: pick(k.accents) } : {});
     this.scene.add(model.group);
-    const cruise = rand(k.v[0], k.v[1]);
+    const cruise = rand(k.v[0], k.v[1]) * this.speed;
     const c = {
-      model, kind: k.kind, cut: !!k.cut, s, x, targetX: x, vx: 0, v: cruise * 0.9, cruise,
+      model, kind: k.kind, cut: !!k.cut, slow: !!k.slow, s, x, targetX: x, vx: 0, v: cruise * 0.9, cruise,
       lane: useLane, laneT: rand(2, 9), hitCd: 0, stopT: 0, stopped: false,
     };
     this.cars.push(c);
@@ -95,7 +107,7 @@ export class Traffic {
     const noPlayer = !!opts.noPlayer;
     const events = [];
     const ps = player.s;
-    const dens = trafficDensity(ps);
+    const dens = trafficDensity(ps) * this.density;
 
     // إنشاء وحذف
     const want = Math.round(6 + 14 * dens);
@@ -164,7 +176,7 @@ export class Traffic {
           for (const d of dirs) {
             const nl = c.lane + d;
             if (nl < 0 || nl > 3) continue;
-            if (c.kind === 'tuktuk' && nl < 2) continue;
+            if (c.slow && nl < 2) continue;
             const tx = LANE_X[nl];
             if (!this._free(c.s - 6, tx, c, 24)) continue;
             if (!noPlayer && Math.abs(player.x - tx) < 2.6 && Math.abs(player.s - c.s) < 20) continue;
@@ -241,8 +253,7 @@ export class Traffic {
     for (const c of this.cars) {
       place(c.model.group, c.s, c.x, 0);
       c.model.group.rotation.y = headingYaw(c.s, c.v, c.vx);
-      const spin = c.v * 0.016 / 0.34;
-      for (const w of c.model.wheels) w.rotation.x -= spin;
+
     }
     for (const d of this.decor) {
       place(d.model.group, d.s, d.x, 0);

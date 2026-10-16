@@ -17,6 +17,7 @@
       <div class="pill" id="hud-money">💰 <b>0</b></div>
       <div class="pill" id="hud-timer">⏱ <b>6:00</b></div>
       <div class="pill small" id="hud-day">يوم 1</div>
+      <button id="btn-radio" class="icon-btn" aria-label="الراديو">📻</button>
       <button id="btn-pause" class="icon-btn" aria-label="إيقاف مؤقت">⏸</button>
     </div>
 
@@ -56,13 +57,17 @@
     <div class="panel menu">
       <div class="logo">🚖</div>
       <h1>أجرة الكورنيش</h1>
-      <p class="sub">سواق تاكسى على الكورنيش. وصّل الركاب، اجمع فلوس، واشترى عربيتك.</p>
+      <p class="sub">سواق على طرق إسكندرية. وصّل الركاب، اجمع فلوس، لوّن عربيتك واشتريها.</p>
       <div class="status" id="menu-status"></div>
-      <button class="btn primary" id="m-start">ابدأ الوردية</button>
+      <button class="btn primary" id="m-start">اختار الطريق وابدأ</button>
       <div class="row">
         <button class="btn" id="m-garage">🚗 الجراج</button>
         <button class="btn" id="m-quests">🏆 المهام</button>
         <button class="btn" id="m-settings">⚙️ الإعدادات</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="m-invite">🎁 ادعو صحابك</button>
+        <button class="btn" id="m-radio">📻 الراديو</button>
       </div>
       <p class="foot">لعبة مستقلة بكود وتصميم أصلى · نسخة تجريبية</p>
     </div>
@@ -133,6 +138,7 @@
       <button class="btn primary" id="p-resume">كمّل</button>
       <button class="btn" id="p-end">إنهاء الوردية وحساب اليوم</button>
       <button class="btn" id="p-sound">الصوت</button>
+      <button class="btn" id="p-radio">📻 الراديو</button>
     </div>
   </section>
 
@@ -144,9 +150,55 @@
       <div id="sum-extra" class="list"></div>
       <div class="row">
         <button class="btn primary" id="su-next">وردية جديدة</button>
+        <button class="btn" id="su-roads">🛣 غيّر الطريق</button>
         <button class="btn" id="su-garage">🚗 الجراج</button>
         <button class="btn" id="su-menu">الرئيسية</button>
       </div>
+    </div>
+  </section>
+
+
+  <!-- ========== اختيار الطريق ========== -->
+  <section id="screen-roads" class="screen hidden">
+    <div class="panel wide">
+      <div class="panel-head"><h2>اختار طريقك</h2><div class="pill" id="roads-money"></div></div>
+      <p class="sub" style="margin:0 0 4px">الأجرة بتتحسب <b>للفرد</b>، والمجموعة بتدفع على عدد أفرادها.</p>
+      <div id="road-list" class="road-list"></div>
+      <button class="btn" id="r-back">رجوع</button>
+    </div>
+  </section>
+
+  <!-- ========== الدعوات ========== -->
+  <section id="screen-invite" class="screen hidden">
+    <div class="panel">
+      <h2>🎁 ادعو صحابك</h2>
+      <p class="sub">ابعت رابطك لصحابك. أى حد يدخل منه بياخد <b id="inv-bonus"></b> جنيه هدية.</p>
+      <div class="status">كودك<br><b id="inv-code" class="code"></b></div>
+      <button class="btn primary" id="inv-wa">ابعت على واتساب</button>
+      <button class="btn" id="inv-copy">📋 انسخ الرابط</button>
+      <div class="set"><span>معاك كود من صاحبك؟</span></div>
+      <div class="row">
+        <input id="inv-input" class="field" maxlength="6" placeholder="كود من 6 حروف" autocomplete="off" autocapitalize="characters">
+        <button class="btn" id="inv-use">استخدم</button>
+      </div>
+      <p class="foot" id="inv-note">اللعب مع الأصحاب أونلاين وتشغيلهم على عربيتك هيتفعّل لما نضيف حسابات الإيميل.</p>
+      <button class="btn" id="inv-back">رجوع</button>
+    </div>
+  </section>
+
+  <!-- ========== الراديو ========== -->
+  <section id="screen-radio" class="screen hidden">
+    <div class="panel">
+      <h2>📻 الراديو</h2>
+      <div class="status" id="radio-now">مقفول</div>
+      <div class="row">
+        <button class="btn primary" id="radio-toggle">شغّل</button>
+        <button class="btn" id="radio-next">⏭ اللى بعده</button>
+      </div>
+      <label class="set"><span>الصوت</span><input type="range" id="radio-vol" min="0" max="1" step="0.05"></label>
+      <div id="radio-list" class="list"></div>
+      <p class="foot">عايز أغانيك؟ حط ملفات mp3 فى فولدر <b>audio</b> وسجّلها فى <b>audio/playlist.json</b> (الشرح فى README).</p>
+      <button class="btn" id="radio-back">رجوع</button>
     </div>
   </section>
 

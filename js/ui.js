@@ -1,8 +1,9 @@
 // الواجهة: شاشات وقوايم وHUD (DOM بس، من غير منطق لعب)
-import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, fmtMoney, fmtTime, getCar } from './data.js';
+import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, WELCOME_BONUS, fmtMoney, fmtTime, getCar } from './data.js';
+import { ROADS } from './roads.js';
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ['menu', 'garage', 'quests', 'settings', 'tutorial', 'pause', 'summary'];
+const SCREENS = ['menu', 'garage', 'quests', 'settings', 'tutorial', 'pause', 'summary', 'roads', 'invite', 'radio'];
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class UI {
@@ -14,7 +15,39 @@ export class UI {
 
   _bind() {
     const g = this.g;
-    $('m-start').onclick = () => g.onStartClick();
+    $('m-start').onclick = () => g.openRoads();
+    $('m-invite').onclick = () => g.openInvite();
+    $('m-radio').onclick = () => g.openRadio();
+    $('r-back').onclick = () => g.backToMenu();
+    $('inv-back').onclick = () => g.backToMenu();
+    $('radio-back').onclick = () => g.backToMenu();
+    $('su-roads').onclick = () => g.openRoads();
+    $('p-radio').onclick = () => g.radio.cycle();
+    $('btn-radio').onclick = () => g.radio.cycle().then(() => this.radioToast());
+    $('inv-wa').onclick = () => g.shareWhatsApp();
+    $('inv-copy').onclick = () => g.copyInvite();
+    $('inv-use').onclick = () => {
+      const msg = g.redeemCode($('inv-input').value);
+      this.toast(msg, msg.startsWith('🎁') ? 'gold' : 'bad');
+      this.renderInvite();
+    };
+    $('radio-toggle').onclick = () => {
+      if (g.radio.playing) g.radio.stop();
+      else g.radio.start();
+    };
+    $('radio-next').onclick = () => g.radio.next();
+    $('radio-vol').oninput = (e) => {
+      g.radio.setVolume(parseFloat(e.target.value));
+      g.save();
+    };
+    $('radio-list').addEventListener('click', (e) => {
+      const it = e.target.closest('[data-i]');
+      if (it) g.radio.start(+it.dataset.i);
+    });
+    $('road-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-road]');
+      if (b) g.startOnRoad(b.dataset.road);
+    });
     $('m-garage').onclick = () => g.openGarage();
     $('m-quests').onclick = () => g.openQuests();
     $('m-settings').onclick = () => g.openSettings();
@@ -40,7 +73,7 @@ export class UI {
     // قائمة الجراج (تفويض أحداث)
     $('garage-list').addEventListener('click', (e) => {
       const sw = e.target.closest('[data-color]');
-      if (sw) return g.setColor(sw.dataset.car, sw.dataset.color);
+      if (sw) return g.buyColor(sw.dataset.car, sw.dataset.color);
       const btn = e.target.closest('[data-act]');
       if (btn) {
         if (btn.dataset.act === 'buy') g.buyCar(btn.dataset.id);
@@ -53,6 +86,7 @@ export class UI {
   }
 
   show(name) {
+    if (name !== 'summary') this.clearToasts();
     for (const s of SCREENS) $('screen-' + s).classList.toggle('hidden', s !== name);
   }
 
@@ -99,11 +133,12 @@ export class UI {
       if (owned && !car.rented) {
         sw =
           '<div class="swatches">' +
-          COLORS.map(
-            (c) =>
-              `<button class="sw ${(st.colors[car.id] || 'white') === c.id ? 'on' : ''}" title="${c.name}" data-car="${car.id}" data-color="${c.id}" style="background:${hex(c.hex)}"></button>`,
-          ).join('') +
-          '</div>';
+          COLORS.map((c) => {
+            const has = g.hasColor(car.id, c.id);
+            const on = (st.colors[car.id] || 'white') === c.id;
+            return `<button class="sw ${on ? 'on' : ''} ${has ? '' : 'locked'}" title="${c.name}${has ? '' : ' · ' + c.price + ' ج'}" data-car="${car.id}" data-color="${c.id}" style="background:${hex(c.hex)}">${has ? '' : `<small>${c.price}</small>`}</button>`;
+          }).join('') +
+          '</div><div class="meta" style="font-size:11px;color:var(--muted)">الألوان المقفولة بتتشترى بالفلوس (السعر مكتوب عليها)</div>';
       }
       div.innerHTML = `
         <h3>${car.name}</h3>
@@ -111,11 +146,82 @@ export class UI {
         ${bar('السرعة', car.vmax / 60)}
         ${bar('التسارع', car.accel / 11)}
         ${bar('التحكم', car.handling / 1.2)}
-        <div class="meta" style="font-size:12px;color:var(--muted)">${car.rented ? `إيجار: ${car.fee} جنيه كل وردية` : `مصاريف تصليح: ${car.repair} ج لكل 1% ضرر`}${car.fareMul > 1 ? ` · أجرة ×${car.fareMul}` : ''}</div>
+        <div class="meta" style="font-size:12px;color:var(--muted)">${car.rented ? `إيجار: ${car.fee} جنيه كل وردية` : `مصاريف تصليح: ${car.repair} ج لكل 1% ضرر`}· بتشيل لحد ${car.cap} ركاب</div>
         ${sw}
         ${action}`;
       list.appendChild(div);
     }
+  }
+
+  // ---------- الطرق ----------
+  renderRoads() {
+    const st = this.g.state;
+    $('roads-money').textContent = `💰 ${fmtMoney(st.money)} جنيه`;
+    const list = $('road-list');
+    list.innerHTML = '';
+    for (const r of ROADS) {
+      const d = document.createElement('div');
+      d.className = 'road ' + (r.tagClass || '') + (st.selectedRoad === r.id ? ' sel' : '');
+      const stops = r.landmarks.slice(0, 6).map((l) => l.name).join(' · ') + (r.landmarks.length > 6 ? ' …' : '');
+      d.innerHTML = `
+        <div class="road-main">
+          <h3>${r.name} ${st.roadsPlayed[r.id] ? '<span class="chk">✓</span>' : ''}</h3>
+          <div class="meta">${r.sub}</div>
+          <div class="meta stops">${stops}</div>
+        </div>
+        <div class="road-side">
+          <div class="fare"><b>${r.fare}</b><small>جنيه / فرد</small></div>
+          <div class="rtag ${r.tagClass || ''}">${r.tagIcon} ${r.tag}</div>
+          <button class="btn primary" data-road="${r.id}">اشتغل هنا</button>
+        </div>`;
+      list.appendChild(d);
+    }
+  }
+
+  // ---------- الدعوات ----------
+  renderInvite() {
+    const g = this.g;
+    $('inv-bonus').textContent = WELCOME_BONUS;
+    $('inv-code').textContent = g.state.refCode;
+    $('inv-input').value = '';
+    $('inv-input').disabled = !!g.state.referredBy;
+    $('inv-use').disabled = !!g.state.referredBy;
+    $('inv-input').placeholder = g.state.referredBy ? 'استخدمت كود: ' + g.state.referredBy : 'كود من 6 حروف';
+  }
+
+  // ---------- الراديو ----------
+  renderRadio() {
+    const r = this.g.radio;
+    $('radio-vol').value = r.volume;
+    this.setRadioLabel();
+  }
+
+  setRadioLabel() {
+    const r = this.g.radio;
+    const cur = r.current;
+    const now = $('radio-now');
+    if (now) now.textContent = r.playing && cur ? 'شغّال: ' + cur.title : 'مقفول';
+    const tg = $('radio-toggle');
+    if (tg) tg.textContent = r.playing ? '⏹ اقفل' : '▶ شغّل';
+    const list = $('radio-list');
+    if (list) {
+      list.innerHTML = '';
+      r.tracks.forEach((t, i) => {
+        const d = document.createElement('div');
+        d.className = 'item' + (r.playing && r.idx === i ? ' done' : '');
+        d.dataset.i = i;
+        d.style.cursor = 'pointer';
+        d.innerHTML = `<div>${t.title}</div><div class="tag">${r.playing && r.idx === i ? '▶' : ''}</div>`;
+        list.appendChild(d);
+      });
+    }
+    const b = $('btn-radio');
+    if (b) b.textContent = r.playing ? '🎶' : '📻';
+  }
+
+  radioToast() {
+    const r = this.g.radio;
+    this.toast(r.playing && r.current ? r.current.title : '📻 الراديو اتقفل', '');
   }
 
   // ---------- المهام والإنجازات ----------
@@ -197,8 +303,9 @@ export class UI {
     $('hud-timer').classList.toggle('warn', !over && sec <= 30);
   }
 
-  setDay(d) {
-    this._set('day', d, (v) => ($('hud-day').textContent = `يوم ${v}`));
+  setDay(d, road) {
+    const label = `يوم ${d}` + (road ? ` · ${road.name}` : '');
+    this._set('day', label, (v) => ($('hud-day').textContent = v));
   }
 
   setDamage(pct) {

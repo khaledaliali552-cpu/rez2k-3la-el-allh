@@ -24,7 +24,7 @@ export class PlayerCar {
   setSpec(spec, colorHex) {
     this.spec = spec;
     if (this.model) this.inner.remove(this.model.group);
-    this.model = buildVehicle(spec.body, colorHex);
+    this.model = buildVehicle(spec.body, colorHex, { wheels: true });
     this.inner.add(this.model.group);
     this.w = this.model.w;
     this.l = this.model.l;
@@ -120,8 +120,7 @@ export class PlayerCar {
     this.inner.rotation.x = pitch;
     this.inner.rotation.z = clamp(this.vxS * 0.012, -0.07, 0.07);
     if (this.model) {
-      const spin = this.v * (dt || 0) / 0.34;
-      for (const w of this.model.wheels) w.rotation.x -= spin;
+      for (const w of this.model.wheels) w.rotation.x -= (this.v * (dt || 0)) / w.userData.r;
     }
   }
 }

@@ -1,10 +1,12 @@
-// نظام الركاب: استنى الراكب، وصّله، واحسب الأجرة والبقشيش
+// نظام الركاب: استنى الراكب (فرد أو مجموعة)، وصّله لمحطة، واحسب الأجرة والبقشيش
 import * as THREE from '../vendor/three.module.min.js';
-import { PASSENGERS, PLACES, pick, rand, clamp } from './data.js';
+import { PASSENGERS, pick, pickWeighted, rand, clamp } from './data.js';
 import { CURB_X, place } from './world.js';
 import { buildPerson, buildBeacon } from './vehicles.js';
+import { landmarkS, landmarkAt, landmarkAfter } from './roads.js';
 
 const roundTo = (n, step) => Math.round(n / step) * step;
+const GROUP_W = { 1: 4, 2: 3.2, 3: 2, 4: 1.4, 5: 0.7, 6: 0.5 };
 
 // حساب الأجرة والبقشيش والنجوم (دالة صافية عشان تتختبر)
 export function settleRide(ride, remaining, fareMul = 1) {
@@ -16,7 +18,7 @@ export function settleRide(ride, remaining, fareMul = 1) {
   let tip = 0;
   const late = remaining < 0;
   if (!late) {
-    tip = fare * 0.45 * (0.25 + 0.75 * ratio) * t.tipMul * comfort;
+    tip = fare * 0.3 * (0.25 + 0.75 * ratio) * t.tipMul * comfort;
     if (ride.crashes > 0) tip = 0;
   } else {
     fare *= clamp(1 + (remaining / ride.limit) * 0.8, 0.6, 1);
@@ -31,6 +33,7 @@ export function settleRide(ride, remaining, fareMul = 1) {
 export class Rides {
   constructor(scene) {
     this.scene = scene;
+    this.road = null;
     this.phase = 'idle';
     this.cur = null;
     this.person = null;
@@ -38,6 +41,11 @@ export class Rides {
     this.holdT = 0;
     this.idleT = 0;
     this.time = 0;
+    this.chatT = 0;
+  }
+
+  setRoad(road) {
+    this.road = road;
   }
 
   reset() {
@@ -55,24 +63,33 @@ export class Rides {
     this.beacon = null;
   }
 
-  spawn(playerS) {
-    const type = pick(PASSENGERS);
-    const dist = roundTo(rand(900, 2800), 50);
+  spawn(playerS, cap = 3) {
+    const road = this.road;
+    const type = PASSENGERS.find((p) => p.id === pickWeighted(road.pax)) || pick(PASSENGERS);
+    const gw = {};
+    for (let n = 1; n <= Math.max(1, cap); n++) gw[n] = GROUP_W[n] || 0.3;
+    const group = +pickWeighted(gw);
     const gap = rand(280, 520);
-    const baseFare = (25 + dist * 0.028) * type.fareMul;
+    const pickupS = playerS + gap;
+    // أول محطة بعد الراكب بمسافة معقولة، وممكن نتخطى واحدة
+    let k = landmarkAfter(road, pickupS + 420);
+    if (Math.random() < 0.35 && landmarkS(road, k + 1) - pickupS < 3400) k++;
+    const destS = landmarkS(road, k);
+    const dist = destS - pickupS;
+    const lm = landmarkAt(road, k);
+    const baseFare = road.fare * group;
     const limit = dist / (14 + 3 * type.impatience) + 12;
     this.cur = {
-      type, name: pick(type.names), place: pick(PLACES),
-      pickupS: playerS + gap, destS: playerS + gap + dist, dist, baseFare, limit,
-      hardBrakes: 0, swerves: 0, crashes: 0,
+      type, name: pick(type.names), group, place: lm.name, landmarkLines: lm.lines || null,
+      pickupS, destS, dist, baseFare, limit, hardBrakes: 0, swerves: 0, crashes: 0,
     };
     this.remaining = limit;
     this._clearMeshes();
-    this.person = buildPerson(type.shirt);
-    place(this.person, this.cur.pickupS, CURB_X, 0.16);
-    this.person.rotation.y = Math.PI / 2; // بيبص ناحية الطريق
+    this.person = buildPerson(type.shirt, group);
+    place(this.person, pickupS, CURB_X, 0.16);
+    this.person.rotation.y = Math.PI / 2;
     this.beacon = buildBeacon(0xffd23f);
-    place(this.beacon, this.cur.pickupS, CURB_X - 0.4, 0.16);
+    place(this.beacon, pickupS, CURB_X - 0.4, 0.16);
     this.scene.add(this.person, this.beacon);
     this.phase = 'waiting';
     this.holdT = 0;
@@ -92,7 +109,7 @@ export class Rides {
     const c = this.cur;
     const inZone = (s) => Math.abs(s - player.s) < 10 && player.x > 2.4 && player.v < 3.0;
 
-    if (this.person) {
+    if (this.person && this.person.userData.arm) {
       this.person.userData.arm.rotation.z = -0.4 + Math.sin(this.time * 7) * 0.5;
     }
     if (this.beacon) {
@@ -103,7 +120,7 @@ export class Rides {
 
     if (this.phase === 'idle') {
       this.idleT -= dt;
-      if (this.idleT <= 0 && !ctx.shiftOver) this.spawn(player.s);
+      if (this.idleT <= 0 && !ctx.shiftOver) this.spawn(player.s, player.spec.cap);
       return events;
     }
 
@@ -127,7 +144,7 @@ export class Rides {
         this.phase = 'riding';
         this.holdT = 0;
         this.remaining = c.limit;
-        if (this.person) this.person.visible = false;
+        this.chatT = rand(14, 22);
         this._clearMeshes();
         this.beacon = buildBeacon(0x3ddc84);
         place(this.beacon, c.destS, CURB_X - 0.4, 0.16);
@@ -139,6 +156,11 @@ export class Rides {
 
     if (this.phase === 'riding') {
       this.remaining -= dt;
+      this.chatT -= dt;
+      if (this.chatT <= 0) {
+        this.chatT = rand(18, 30);
+        events.push({ type: 'chatter', ride: c });
+      }
       const ds = c.destS - player.s;
       if (ds < -60) {
         this._clearMeshes();

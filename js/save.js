@@ -1,17 +1,29 @@
 // حفظ التقدم فى localStorage
 const KEY = 'corniche_cab_save_v1';
 
+const makeCode = () => {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 6; i++) c += abc[Math.floor(Math.random() * abc.length)];
+  return c;
+};
+
 export const defaults = () => ({
-  v: 1,
+  v: 2,
   money: 0,
   day: 1,
   owned: ['boss_taxi'],
   selected: 'boss_taxi',
   colors: {},
-  stats: { rides: 0, perfect: 0, km: 0, earned: 0, tips: 0, fines: 0, crashes: 0, bestTip: 0, shifts: 0 },
+  ownedColors: [], // مثال: "sedan:black"
+  selectedRoad: 'abuqir',
+  roadsPlayed: {},
+  refCode: makeCode(),
+  referredBy: '',
+  stats: { rides: 0, people: 0, perfect: 0, km: 0, earned: 0, tips: 0, fines: 0, crashes: 0, bestTip: 0, shifts: 0 },
   ach: {},
   quests: { day: 0, ids: [] },
-  settings: { sound: true, vibrate: true, auto: false, steer: 1, brakeSens: 1 },
+  settings: { sound: true, vibrate: true, auto: false, steer: 1, brakeSens: 1, radio: true, radioVol: 0.6, radioTrack: 0 },
   tutorialDone: false,
 });
 
@@ -31,8 +43,19 @@ export function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaults();
-    const d = merge(defaults(), JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    const d = merge(defaults(), parsed);
+    // مفاتيح الخرايط (مش موجودة فى الافتراضى فالدمج بيتخطاها)
+    if (parsed.colors && typeof parsed.colors === 'object') d.colors = parsed.colors;
+    if (parsed.roadsPlayed && typeof parsed.roadsPlayed === 'object') d.roadsPlayed = parsed.roadsPlayed;
+    if (parsed.ach && typeof parsed.ach === 'object') d.ach = parsed.ach;
     if (!Array.isArray(d.owned) || !d.owned.includes('boss_taxi')) d.owned = ['boss_taxi', ...(d.owned || [])];
+    if (!Array.isArray(d.ownedColors)) d.ownedColors = [];
+    // ترحيل نسخة قديمة: الألوان اللى كانت مختارة تعتبر ملكه
+    for (const [car, col] of Object.entries(d.colors)) {
+      const key = car + ':' + col;
+      if (col !== 'white' && !d.ownedColors.includes(key)) d.ownedColors.push(key);
+    }
     return d;
   } catch (e) {
     return defaults();
