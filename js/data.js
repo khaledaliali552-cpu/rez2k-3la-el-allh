@@ -4,6 +4,7 @@ export const GAME_NAME = 'أجرة الكورنيش';
 export const SHIFT_SECONDS = 360; // مدة الوردية
 export const RADAR_FINE = 200;
 export const WELCOME_BONUS = 300; // مكافأة اللى بيدخل من رابط دعوة
+export const INVITER_BONUS = 500; // مكافأة صاحب الكود لكل صاحب جديد
 
 export const rand = (a, b) => a + Math.random() * (b - a);
 export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];

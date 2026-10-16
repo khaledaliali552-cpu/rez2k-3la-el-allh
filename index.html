@@ -68,6 +68,7 @@
       <div class="row">
         <button class="btn" id="m-invite">🎁 ادعو صحابك</button>
         <button class="btn" id="m-radio">📻 الراديو</button>
+        <button class="btn" id="m-account">👤 حسابي</button>
       </div>
       <p class="foot">لعبة مستقلة بكود وتصميم أصلى · نسخة تجريبية</p>
     </div>
@@ -199,6 +200,57 @@
       <div id="radio-list" class="list"></div>
       <p class="foot">عايز أغانيك؟ حط ملفات mp3 فى فولدر <b>audio</b> وسجّلها فى <b>audio/playlist.json</b> (الشرح فى README).</p>
       <button class="btn" id="radio-back">رجوع</button>
+    </div>
+  </section>
+
+
+  <!-- ========== الحساب ========== -->
+  <section id="screen-account" class="screen hidden">
+    <div class="panel wide" id="acc-body">
+      <div class="panel-head"><h2>👤 حسابي</h2></div>
+      <p class="foot" id="acc-note"></p>
+      <p class="foot"><a href="privacy.html" target="_blank" style="color:var(--accent)">سياسة الخصوصية</a></p>
+
+      <div id="acc-guest">
+        <p class="sub" style="margin:0 0 8px">سجّل بالإيميل عشان تلاقى تقدمك على أى جهاز، وتاخد مكافأة صحابك اللى بيدخلوا بكودك، وتشغّلهم على عربيتك.</p>
+        <div class="form">
+          <input id="acc-name" class="field plain" placeholder="اسمك (للحساب الجديد)" autocomplete="nickname">
+          <input id="acc-email" class="field plain" type="email" placeholder="الإيميل" autocomplete="email" dir="ltr">
+          <input id="acc-pass" class="field plain" type="password" placeholder="الباسورد (6 حروف على الأقل)" autocomplete="current-password" dir="ltr">
+        </div>
+        <div class="row">
+          <button class="btn primary" id="acc-login">دخول</button>
+          <button class="btn" id="acc-signup">حساب جديد</button>
+        </div>
+        <button class="btn" id="acc-reset" style="margin-top:8px">نسيت الباسورد</button>
+      </div>
+
+      <div id="acc-user" class="hidden">
+        <div class="status" id="acc-who"></div>
+
+        <h3 class="sec">🚖 وظّف صاحبك على عربيتك</h3>
+        <p class="foot" style="text-align:start">هات كود صاحبك (من شاشة "ادعو صحابك" عنده)، واختار العربية ونسبتك من كسبه.</p>
+        <div class="form">
+          <select id="job-car" class="field plain"></select>
+          <div class="row">
+            <input id="job-code" class="field" maxlength="6" placeholder="كود صاحبك" autocomplete="off" autocapitalize="characters">
+            <select id="job-share" class="field plain" style="flex:0 0 130px">
+              <option value="20">نسبتك 20%</option>
+              <option value="30" selected>نسبتك 30%</option>
+              <option value="40">نسبتك 40%</option>
+              <option value="50">نسبتك 50%</option>
+            </select>
+          </div>
+          <button class="btn primary" id="job-offer">ابعت العرض</button>
+        </div>
+        <div id="acc-employees" class="list" style="margin-top:8px"></div>
+
+        <h3 class="sec">🤝 شغل عند أصحابك</h3>
+        <div id="acc-offers" class="list"></div>
+
+        <button class="btn danger" id="acc-logout" style="margin-top:12px">تسجيل خروج</button>
+      </div>
+      <button class="btn" id="acc-back">رجوع</button>
     </div>
   </section>
 

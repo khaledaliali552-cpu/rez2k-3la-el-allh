@@ -1,9 +1,10 @@
 // الواجهة: شاشات وقوايم وHUD (DOM بس، من غير منطق لعب)
 import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, WELCOME_BONUS, fmtMoney, fmtTime, getCar } from './data.js';
 import { ROADS } from './roads.js';
+import { errText } from './cloud.js';
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ['menu', 'garage', 'quests', 'settings', 'tutorial', 'pause', 'summary', 'roads', 'invite', 'radio'];
+const SCREENS = ['menu', 'garage', 'quests', 'settings', 'tutorial', 'pause', 'summary', 'roads', 'invite', 'radio', 'account'];
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class UI {
@@ -17,6 +18,49 @@ export class UI {
     const g = this.g;
     $('m-start').onclick = () => g.openRoads();
     $('m-invite').onclick = () => g.openInvite();
+    $('m-account').onclick = () => g.openAccount();
+    $('acc-back').onclick = () => g.backToMenu();
+    const cl = () => g.cloud;
+    const guard = async (fn) => {
+      try {
+        await fn();
+      } catch (e) {
+        this.toast(e && e.code ? errText(e) : (e && e.message) || 'حصلت مشكلة', 'bad');
+      }
+    };
+    $('acc-login').onclick = () => guard(async () => cl().signIn($('acc-email').value, $('acc-pass').value));
+    $('acc-signup').onclick = () => guard(async () => {
+      if (!$('acc-name').value.trim()) throw new Error('اكتب اسمك الأول');
+      await cl().signUp($('acc-email').value, $('acc-pass').value, $('acc-name').value);
+    });
+    $('acc-reset').onclick = () => guard(async () => {
+      if (!$('acc-email').value.trim()) throw new Error('اكتب الإيميل الأول');
+      await cl().resetPassword($('acc-email').value);
+      this.toast('بعتنالك لينك تغيير الباسورد على الإيميل ✉️', 'good');
+    });
+    $('acc-logout').onclick = () => guard(() => cl().signOut());
+    $('job-offer').onclick = () => guard(async () => {
+      await cl().offerJob($('job-code').value, $('job-car').value, +$('job-share').value);
+      $('job-code').value = '';
+      this.toast('بعتّ العرض لصاحبك ✅', 'good');
+    });
+    $('acc-body').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-job]');
+      if (!b) return;
+      const id = b.dataset.job;
+      const act = b.dataset.act;
+      guard(async () => {
+        if (act === 'accept') await cl().respondJob(id, true);
+        else if (act === 'decline') await cl().respondJob(id, false);
+        else if (act === 'end') {
+          if (window.confirm('تنهى الشغل ده؟')) await cl().endJob(id);
+        } else if (act === 'drive') {
+          g.selectCar('job:' + id);
+          g.backToMenu();
+          this.toast('اتحددت العربية. اضغط ابدأ ✅', 'good');
+        }
+      });
+    });
     $('m-radio').onclick = () => g.openRadio();
     $('r-back').onclick = () => g.backToMenu();
     $('inv-back').onclick = () => g.backToMenu();
@@ -102,7 +146,7 @@ export class UI {
   // ---------- القائمة ----------
   renderMenu() {
     const st = this.g.state;
-    const car = getCar(st.selected);
+    const car = this.g.carSpec(st.selected) || getCar('boss_taxi');
     const bal = st.money < 0 ? `عليك ${fmtMoney(-st.money)} جنيه للمعلم` : `رصيدك ${fmtMoney(st.money)} جنيه`;
     $('menu-status').innerHTML = `يوم <b>${st.day}</b> · ${bal}<br>العربية: <b>${car.name}</b>${car.rented ? ' (بتاعة المعلم)' : ''}`;
   }
@@ -151,6 +195,64 @@ export class UI {
         ${action}`;
       list.appendChild(div);
     }
+    for (const job of g.cloud.workerJobs.filter((j) => j.status === 'active')) {
+      const spec = g.carSpec('job:' + job.id);
+      if (!spec) continue;
+      const div = document.createElement('div');
+      div.className = 'gcar' + (st.selected === spec.id ? ' sel' : '') + (g.previewId === spec.id ? ' prev' : '');
+      div.dataset.id = spec.id;
+      div.innerHTML = `<h3>🤝 ${spec.name}</h3>
+        <p>عربية صاحبك ${job.ownerName}. بتشتغل عليها ومن غير إيجار، وبتدفعله ${job.share}% من اللى بتكسبه.</p>
+        ${st.selected === spec.id ? '<button class="btn" disabled>العربية الحالية ✓</button>' : `<button class="btn primary" data-act="use" data-id="${spec.id}">اركب العربية</button>`}`;
+      list.appendChild(div);
+    }
+  }
+
+  // ---------- الحساب ----------
+
+  renderAccount() {
+    const c = this.g.cloud;
+    const box = $('acc-guest');
+    if (!box) return;
+    const note = $('acc-note');
+    if (!c.ok) {
+      box.classList.add('hidden');
+      $('acc-user').classList.add('hidden');
+      note.textContent = 'الحسابات محتاجة نت. لو النت شغال، حدّث الصفحة وجرّب تانى.';
+      return;
+    }
+    note.textContent = '';
+    const on = c.signedIn;
+    box.classList.toggle('hidden', on || (c.user && !c.ready));
+    $('acc-user').classList.toggle('hidden', !on);
+    if (c.user && !c.ready) note.textContent = 'بنحمّل بياناتك…';
+    if (!on) return;
+    const st = this.g.state;
+    $('acc-who').innerHTML = `${st.name || ''}<br><small>${c.user.email}</small><br>كودك: <b class="code" style="font-size:20px">${st.refCode}</b>`;
+    // العربيات اللى يقدر يشغّل عليها
+    const sel = $('job-car');
+    const owned = st.owned.filter((id) => !getCar(id).rented);
+    sel.innerHTML = owned.length
+      ? owned.map((id) => `<option value="${id}">${getCar(id).name}</option>`).join('')
+      : '<option value="">مفيش عربية بتاعتك لسه</option>';
+    $('job-offer').disabled = !owned.length;
+    const stText = { pending: 'مستني الرد', active: 'شغال' };
+    $('acc-employees').innerHTML = c.ownerJobs.length
+      ? c.ownerJobs
+          .map((j) => `<div class="item"><div><div>${j.workerName || 'صاحبك'} · ${getCar(j.carId).name}</div><div class="meta">حصتك ${j.share}% · ${stText[j.status] || j.status}</div></div><button class="btn" data-job="${j.id}" data-act="end">إنهاء</button></div>`)
+          .join('')
+      : '<div class="meta">لسه موظفتش حد.</div>';
+    const offers = c.workerJobs.filter((j) => j.status === 'pending');
+    const active = c.workerJobs.filter((j) => j.status === 'active');
+    $('acc-offers').innerHTML =
+      (offers.length
+        ? offers
+            .map((j) => `<div class="item"><div><div>${j.ownerName} عارض عليك تشتغل على ${getCar(j.carId).name}</div><div class="meta">هتدفعله ${j.share}% من اللى بتكسبه</div></div><div class="row"><button class="btn primary" data-job="${j.id}" data-act="accept">موافق</button><button class="btn" data-job="${j.id}" data-act="decline">رفض</button></div></div>`)
+            .join('')
+        : '') +
+      active
+        .map((j) => `<div class="item done"><div><div>🤝 ${getCar(j.carId).name} (${j.ownerName})</div><div class="meta">بتدفعله ${j.share}%</div></div><div class="row"><button class="btn primary" data-job="${j.id}" data-act="drive">اشتغل عليها</button><button class="btn" data-job="${j.id}" data-act="end">اعتذر</button></div></div>`)
+        .join('') || (offers.length ? '' : '<div class="meta">مفيش عروض شغل.</div>');
   }
 
   // ---------- الطرق ----------

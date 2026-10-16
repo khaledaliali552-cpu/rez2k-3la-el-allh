@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // حساب اللاعب: صاحبه بس
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // كود الدعوة -> صاحبه (أى لاعب مسجل يقدر يدوّر على كود)
+    match /codes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // الدعوات: المدعو بيسجل دعوة واحدة، وصاحب الكود بيستلم مكافأته
+    match /referrals/{invitee} {
+      allow create: if signedIn() && invitee == request.auth.uid
+        && request.resource.data.inviterUid != request.auth.uid
+        && request.resource.data.claimed == false
+        && get(/databases/$(database)/documents/codes/$(request.resource.data.code)).data.uid == request.resource.data.inviterUid;
+      allow read: if signedIn() && (invitee == request.auth.uid || resource.data.inviterUid == request.auth.uid);
+      allow update: if signedIn() && resource.data.inviterUid == request.auth.uid
+        && resource.data.claimed == false && request.resource.data.claimed == true
+        && onlyChanges(['claimed']);
+      allow delete: if false;
+    }
+
+    // التشغيل: صاحب العربية بيعرض، والسواق بيقبل أو يرفض
+    match /jobs/{id} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.workerUid != request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.share >= 0 && request.resource.data.share <= 70;
+      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.workerUid == request.auth.uid);
+      allow update: if signedIn() && onlyChanges(['status']) && (
+        (resource.data.workerUid == request.auth.uid && request.resource.data.status in ['active', 'declined', 'ended'])
+        || (resource.data.ownerUid == request.auth.uid && request.resource.data.status == 'ended'));
+      allow delete: if false;
+    }
+
+    // حصة صاحب العربية: السواق بيسجلها، وصاحب العربية بيستلمها
+    match /payouts/{id} {
+      allow create: if signedIn() && request.resource.data.workerUid == request.auth.uid
+        && request.resource.data.claimed == false
+        && request.resource.data.amount >= 0 && request.resource.data.amount <= 200000
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.workerUid == request.auth.uid
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.ownerUid == request.resource.data.ownerUid
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'active';
+      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.workerUid == request.auth.uid);
+      allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
+        && resource.data.claimed == false && request.resource.data.claimed == true
+        && onlyChanges(['claimed']);
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid && resource.data.claimed == true;
+    }
+  }
+}

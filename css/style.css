@@ -223,3 +223,12 @@ kbd { background: rgba(255, 255, 255, .12); border-radius: 6px; padding: 1px 7px
 #radio-list { max-height: 26vh; overflow-y: auto; }
 #screen-roads .panel.wide { width: min(780px, 100%); }
 @media (min-width: 900px) { #screen-roads { place-items: center; } }
+
+.form { display: flex; flex-direction: column; gap: 8px; }
+.field.plain { text-transform: none; letter-spacing: 0; text-align: start; width: 100%; }
+select.field option { background: #0e1428; color: #f4f1ea; }
+.sec { margin: 14px 0 4px; font-size: 16px; }
+#screen-account .panel { max-height: calc(100vh - 28px); }
+@media (min-width: 900px) { #screen-account { place-items: center; } #screen-account .panel.wide { width: min(560px, 100%); } }
+.form .field { flex: none; }
+.form .row .field { flex: 1 1 140px; }

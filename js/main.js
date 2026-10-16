@@ -4,6 +4,7 @@ import { World, cx } from './world.js';
 import { ROADS, getRoad, radarS as roadRadarS, radarLimit as roadRadarLimit } from './roads.js';
 import { boardLine, chatterLine, reactLine } from './dialog.js';
 import { Radio } from './radio.js';
+import { Cloud } from './cloud.js';
 import { PlayerCar } from './car.js';
 import { Traffic } from './traffic.js';
 import { Rides } from './rides.js';
@@ -49,6 +50,8 @@ class Game {
     this.sfx = new Sfx();
     this.radio = new Radio(this.state.settings);
     this.ui = new UI(this);
+    this.cloud = new Cloud(this);
+    this.cloud.onChange = () => this.ui.renderAccount();
 
     this.mode = 'menu';
     this.previewId = this.state.selected;
@@ -88,6 +91,7 @@ class Game {
     this.ui.show('menu');
     if (this.refMsg) this.ui.toast(this.refMsg, 'gold');
 
+    this.cloud.init();
     this.last = performance.now();
     requestAnimationFrame((t) => this.loop(t));
 
@@ -102,10 +106,57 @@ class Game {
 
   save() {
     Save.save(this.state);
+    this.cloud.queueSave();
+  }
+
+  // العربية بالـ id (ممكن تكون عربية صاحب: job:<id>)
+  jobById(id) {
+    return this.cloud.workerJobs.find((j) => j.id === id && j.status === 'active') || null;
+  }
+
+  carSpec(id) {
+    if (typeof id === 'string' && id.startsWith('job:')) {
+      const job = this.jobById(id.slice(4));
+      if (!job) return null;
+      const base = getCar(job.carId);
+      return { ...base, id, name: `${base.name} (${job.ownerName})`, rented: false, fee: 0, job };
+    }
+    return getCar(id);
+  }
+
+  validSelected() {
+    const st = this.state;
+    const spec = this.carSpec(st.selected);
+    if (spec && (spec.job || st.owned.includes(st.selected))) return spec;
+    st.selected = 'boss_taxi';
+    return getCar('boss_taxi');
+  }
+
+  replaceState(ns) {
+    this.state = ns;
+    Save.save(ns);
+    this.road = getRoad(ns.selectedRoad);
+    this.sfx.setEnabled(ns.settings.sound);
+    this.previewId = ns.selected;
+    this.ensureQuests();
+  }
+
+  onCloudSignOut() {
+    if (this.state.selected.startsWith('job:')) this.state.selected = 'boss_taxi';
+    if (this.mode === 'menu' || this.mode === 'garage') this.ui.renderMenu();
+  }
+
+  onCloudReady() {
+    this.validSelected();
+    this.previewId = this.state.selected;
+    this.ui.renderMenu();
+    if (this.mode === 'menu') this.enterPreview();
+    if (this.mode === 'garage') this.ui.renderGarage();
   }
 
   carColor(id) {
-    const car = getCar(id);
+    const car = this.carSpec(id) || getCar('boss_taxi');
+    if (car.job) return getColor(car.job.colorId).hex;
     if (car.rented) return 0xf2b21b;
     const c = this.state.colors[id] || 'white';
     return getColor(this.hasColor(id, c) ? c : 'white').hex;
@@ -169,7 +220,7 @@ class Game {
   }
 
   setPlayerCar(id) {
-    const car = getCar(id);
+    const car = this.carSpec(id) || getCar('boss_taxi');
     this.player.setSpec(car, this.carColor(id));
   }
 
@@ -266,6 +317,11 @@ class Game {
     this.ui.show('settings');
   }
 
+  openAccount() {
+    this.ui.renderAccount();
+    this.ui.show('account');
+  }
+
   openRoads() {
     this.sfx.init();
     this.ui.renderRoads();
@@ -323,7 +379,7 @@ class Game {
   }
 
   selectCar(id) {
-    if (!this.state.owned.includes(id)) return;
+    if (!this.state.owned.includes(id) && !this.jobById(id.replace(/^job:/, ''))) return;
     this.state.selected = id;
     this.previewId = id;
     this.save();
@@ -396,7 +452,7 @@ class Game {
     this.sfx.init();
     this.ensureQuests();
     const st = this.state;
-    if (!st.owned.includes(st.selected)) st.selected = 'boss_taxi';
+    this.validSelected();
     this.applyRoad();
     this.world.setTheme(this.theme);
     this.world.reset(st.day * 131 + 7);
@@ -421,7 +477,6 @@ class Game {
     if (st.settings.radio && !this.radio.playing) this.radio.start(st.settings.radioTrack || 0);
     else this.radio.resumeForGame();
     this.ui.setSoundLabel(st.settings.sound);
-    const car = getCar(st.selected);
     this.ui.toast(`${this.road.tagIcon} ${this.road.name} · ${this.road.fare} جنيه للفرد`, 'gold');
   }
 
@@ -480,7 +535,7 @@ class Game {
     if (this.mode === 'summary') return;
     const st = this.state;
     const s = this.shift;
-    const car = getCar(st.selected);
+    const car = this.carSpec(st.selected) || getCar('boss_taxi');
     this.mode = 'summary';
     this.input.clear();
     this.input.enabled = false;
@@ -494,6 +549,7 @@ class Game {
     const qres = this.questView();
     const questReward = qres.filter((q) => q.done).reduce((a, q) => a + q.reward, 0);
     const fee = car.rented ? car.fee : 0;
+    const cut = car.job ? Math.round((gross * car.job.share) / 100) : 0;
     const repair = Math.round(this.player.damage * car.repair);
 
     st.stats.rides += s.rides;
@@ -508,18 +564,22 @@ class Game {
     st.stats.shifts += 1;
 
     const before = st.money;
-    st.money += gross + questReward - fee - s.fines - repair;
+    st.money += gross + questReward - fee - cut - s.fines - repair;
     const ach = this.checkAchievements(true);
     const achReward = ach.reduce((a, x) => a + x.reward, 0);
     const net = st.money - before;
     st.day += 1;
     this.ensureQuests();
     this.save();
+    if (car.job && cut > 0) {
+      this.cloud.createPayout(car.job, cut).catch((e) => this.ui.toast('تعذر إرسال حصة صاحب العربية: ' + (e.code || e.message), 'bad'));
+    }
 
     const rows = [{ label: `مشاوير على ${this.road.name}`, value: `${s.rides} (${s.people} فرد)` }, { label: 'الأجرة', value: '+' + fmtMoney(s.fares), cls: 'pos' }];
     if (s.tips) rows.push({ label: 'البقشيش', value: '+' + fmtMoney(s.tips), cls: 'pos' });
     if (questReward) rows.push({ label: 'مكافآت المهام', value: '+' + fmtMoney(questReward), cls: 'pos' });
     if (achReward) rows.push({ label: 'مكافآت الإنجازات', value: '+' + fmtMoney(achReward), cls: 'pos' });
+    if (cut) rows.push({ label: `حصة ${car.job.ownerName} (${car.job.share}%)`, value: '-' + fmtMoney(cut), cls: 'neg' });
     if (fee) rows.push({ label: 'حساب المعلم', value: '-' + fmtMoney(fee), cls: 'neg' });
     if (s.fines) rows.push({ label: 'غرامات الرادار', value: '-' + fmtMoney(s.fines), cls: 'neg' });
     if (repair) rows.push({ label: `تصليح العربية (${Math.round(this.player.damage)}% ضرر)`, value: '-' + fmtMoney(repair), cls: 'neg' });
