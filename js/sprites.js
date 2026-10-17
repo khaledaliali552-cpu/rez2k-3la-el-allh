@@ -4,16 +4,24 @@ import * as THREE from '../vendor/three.module.min.js';
 const DIR = 'assets/images/cars/realistic/';
 // [اسم الملف, العرض بالمتر (بالمرايا), نسبة الطول/العرض]
 const S = {
-  sedanRear: [['sedan-rear-cream', 1.95, 0.8071], ['sedan-rear-silver', 1.95, 0.8071], ['sedan-rear-white', 1.95, 0.8071]],
+  sedanRear: [['sedan-rear-cream', 1.95, 0.8071], ['sedan-rear-silver', 1.95, 0.8071], ['sedan-rear-white', 1.95, 0.8071], ['corolla-silver-rear', 2.0, 0.8071], ['corolla-white-rear', 2.0, 0.8071], ['lancer-black-rear', 1.95, 0.7879], ['lancer-silver-rear', 1.95, 0.7879], ['verna-white-rear', 2.0, 0.8053], ['byd-rear', 2.0, 0.7963], ['corolla20-rear', 2.0, 0.8296], ['mg-rear', 2.0, 0.8371]],
+  pickupRear: [['dababa-rear', 2.1, 0.8528], ['flower-blue-rear', 1.95, 1.232], ['flower-red-rear', 1.95, 1.232]],
+  gwagonRear: [['gwagon-rear', 2.15, 0.9297]],
+  ladaRear: [['lada-rear', 1.85, 0.81]],
+  suvRear: [['suv-rear', 2.05, 0.8186]],
   moto: [['moto-rear-red', 0.9, 1.6902], ['moto-rear-yellow', 0.9, 1.7769]],
   ambulance: [['ambulance-rear', 2.0, 1.2399]],
   luxFront: [['lux-front-black', 1.95, 0.7464], ['lux-front-blue', 1.95, 0.7464], ['lux-front-beige', 1.95, 0.7464], ['lux-front-silver', 1.95, 0.7464], ['lux-front-white', 1.95, 0.7464]],
-  sedanFront: [['bmw-front-black', 1.98, 0.7683], ['bmw-front-blue', 1.98, 0.7683], ['bmw-front-gray', 1.98, 0.7683], ['bmw-front-red', 1.98, 0.7683], ['bmw-front-white', 1.98, 0.7683], ['sedan-front-cream', 1.95, 0.8089], ['sedan-front-silver', 1.95, 0.8089]],
+  sedanFront: [['bmw-front-black', 1.98, 0.7683], ['bmw-front-blue', 1.98, 0.7683], ['bmw-front-gray', 1.98, 0.7683], ['bmw-front-red', 1.98, 0.7683], ['bmw-front-white', 1.98, 0.7683], ['sedan-front-cream', 1.95, 0.8089], ['sedan-front-silver', 1.95, 0.8089], ['corolla-silver-front', 2.0, 0.8053], ['corolla-white-front', 2.0, 0.8053], ['lancer-black-front', 1.95, 0.7862], ['corolla20-front', 2.0, 0.7639], ['mg-front', 2.0, 0.8097]],
+  taxiFront: [['taxi-front', 2.0, 0.812]],
+  gwagonFront: [['gwagon-front', 2.15, 0.8776]],
+  ladaFront: [['lada-front', 1.85, 0.7988]],
+  suvFront: [['suv-front', 2.05, 0.7617]],
 };
 // نوع المرور -> مجموعة الصور (rear = اتجاهك، front = عكسى)
 const MAP = {
-  rear: { sedan: 'sedanRear', moto: 'moto', ambulance: 'ambulance' },
-  front: { luxury: 'luxFront', sedan: 'sedanFront' },
+  rear: { sedan: 'sedanRear', pickup: 'pickupRear', gwagon: 'gwagonRear', lada: 'ladaRear', suv: 'suvRear', moto: 'moto', ambulance: 'ambulance' },
+  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront' },
 };
 
 const loader = new THREE.TextureLoader();

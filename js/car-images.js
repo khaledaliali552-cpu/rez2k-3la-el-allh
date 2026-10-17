@@ -7,7 +7,11 @@ export const CAR_IMAGE_DIR = 'assets/images/cars/realistic/';
 export const CAR_IMAGES = {
   luxury: { black: 'lux-front-black.webp', blue: 'lux-front-blue.webp', yellow: 'lux-front-beige.webp', silver: 'lux-front-silver.webp', white: 'lux-front-white.webp' },
   coupe: { black: 'bmw-front-black.webp', blue: 'bmw-front-blue.webp', silver: 'bmw-front-gray.webp', red: 'bmw-front-red.webp', white: 'bmw-front-white.webp' },
-  sedan: { yellow: 'sedan-rear3q-cream.webp', silver: 'sedan-rear3q-silver.webp', white: 'sedan-rear-white.webp' },
+  sedan: { yellow: 'sedan-rear3q-cream.webp', silver: 'corolla-silver-rear3q.webp', white: 'corolla-white-rear.webp', black: 'lancer-black-rear3q.webp' },
+  taxi: { white: 'taxi-front.webp' },
+  lada: { white: 'lada-front.webp' },
+  gwagon: { black: 'gwagon-front.webp' },
+  suv: { blue: 'suv-front.webp' },
   moto: { red: 'moto-rear-red.webp', yellow: 'moto-rear-yellow.webp' },
 };
 
