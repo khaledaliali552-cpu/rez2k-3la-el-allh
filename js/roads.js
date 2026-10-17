@@ -130,11 +130,34 @@ export const ROADS = [
   },
 ];
 
-export const getRoad = (id) => ROADS.find((r) => r.id === id) || ROADS[0];
+// الشغل الحر (خطافى): مشاوير سفر طويلة بأجرة ثابتة. الوجهات بتتحط ديناميك (world.addBoard)
+export const FREE_DESTS = [
+  { name: 'العجمى', fare: 120, dist: 2000, w: 3 },
+  { name: 'الساحل', fare: 500, dist: 5000, w: 2 },
+  { name: 'العاصمة', fare: 550, dist: 6000, w: 2 },
+  { name: 'مطروح', fare: 600, dist: 7500, w: 1.5 },
+];
+export const FREE_ROAD = {
+  id: 'free', free: true,
+  name: 'خطافى: مشاوير السفر',
+  sub: 'العجمى · الساحل · العاصمة · مطروح',
+  fare: 0, tag: 'حر', tagIcon: '🛣️', tagClass: 'blue',
+  first: 1e9, spacing: 1e9,
+  radar: { first: 1500, step: 1800, limits: [90, 100] },
+  env: { right: 'desert', left: 'mixed', ground: 0xb3a27a, median: 'guardrail', trees: 'none', overpass: true, billboards: true },
+  traffic: {
+    density: 0.85, speed: 1.3,
+    mix: { sedan: 4, taxi: 1.5, hatch: 2, suv: 1.5, luxury: 0.8, microbus: 3, tonaya: 1, pickup: 2, boxtruck: 1.5, truck: 2.5, tuktuk: 0 },
+  },
+  pax: { employee: 2, worker: 2, student: 2, tourist: 2, joker: 2, doctor: 1, granny: 1, chef: 1 },
+  landmarks: [],
+};
+
+export const getRoad = (id) => (id === 'free' ? FREE_ROAD : ROADS.find((r) => r.id === id) || ROADS[0]);
 
 // ---- حسابات المحطات (بتتكرر لما تخلص القايمة) ----
 export const landmarkS = (road, k) => road.first + k * road.spacing;
-export const landmarkAt = (road, k) => road.landmarks[((k % road.landmarks.length) + road.landmarks.length) % road.landmarks.length];
+export const landmarkAt = (road, k) => (road.landmarks.length ? road.landmarks[((k % road.landmarks.length) + road.landmarks.length) % road.landmarks.length] : null);
 // أول محطة بعد مسافة s
 export const landmarkAfter = (road, s) => Math.max(0, Math.ceil((s - road.first) / road.spacing));
 

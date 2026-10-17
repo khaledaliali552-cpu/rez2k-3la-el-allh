@@ -17,6 +17,9 @@ export const defaults = () => ({
   colors: {},
   ownedColors: [], // مثال: "sedan:black"
   selectedRoad: 'abuqir',
+  work: { boss: 'b_shokry', vehicle: 'r_taxi', mode: 'shift' },
+  damage: {},
+  mods: {},
   roadsPlayed: {},
   refCode: makeCode(),
   referredBy: '',
@@ -48,6 +51,8 @@ export function normalize(parsed) {
   if (parsed.colors && typeof parsed.colors === 'object') d.colors = parsed.colors;
   if (parsed.roadsPlayed && typeof parsed.roadsPlayed === 'object') d.roadsPlayed = parsed.roadsPlayed;
   if (parsed.ach && typeof parsed.ach === 'object') d.ach = parsed.ach;
+  if (parsed.damage && typeof parsed.damage === 'object') d.damage = parsed.damage;
+  if (parsed.mods && typeof parsed.mods === 'object') d.mods = parsed.mods;
   if (!Array.isArray(d.owned) || !d.owned.includes('boss_taxi')) d.owned = ['boss_taxi', ...(d.owned || [])];
   if (!Array.isArray(d.ownedColors)) d.ownedColors = [];
   // ترحيل نسخة قديمة: الألوان اللى كانت مختارة تعتبر ملكه

@@ -65,6 +65,25 @@ export const CARS = [
   },
 ];
 
+// مركبات الإيجار عند المعلمين (الأسعار بتتضرب فى feeMul)
+export const RENT_VEHICLES = [
+  { id: 'r_tuktuk', name: 'توك توك', body: 'tuktuk', cap: 3, feeMul: 0.6, vmax: 24, accel: 4.6, brake: 14, handling: 1.2, repair: 10, fareMul: 1, repairOnBoss: true, note: 'صغير ومرن، مناسب لأحياء المحمودية' },
+  { id: 'r_tonaya', name: 'تونية', body: 'tonaya', cap: 4, feeMul: 0.8, vmax: 30, accel: 4.8, brake: 14, handling: 0.95, repair: 14, fareMul: 1, note: 'سريعة للأحياء والزنقات' },
+  { id: 'r_taxi', name: 'تاكسى', body: 'taxi', cap: 4, feeMul: 1, vmax: 36, accel: 5.4, brake: 15, handling: 0.9, repair: 18, fareMul: 1, note: 'عربية الشغل المضمونة' },
+  { id: 'r_microbus', name: 'ميكروباص', body: 'microbus', cap: 6, feeMul: 1.3, vmax: 34, accel: 5.2, brake: 15, handling: 0.78, repair: 28, fareMul: 1, note: 'بتشيل 6 ركاب' },
+];
+
+// المعلمين (شغل بالإيجار): يومية ثابتة (fee) أو نسبة من كسبك (pct). الحكايات من تأليفنا.
+export const BOSSES = [
+  { id: 'b_shokry', name: 'المعلم شكرى', quote: '«اليومية بتتدفع الأول والأخر… وماليش دعوة بالزحمة»', fee: 350, pct: 0, vehicles: ['r_taxi', 'r_tonaya', 'r_microbus'] },
+  { id: 'b_sania', name: 'المعلمة سنية', quote: '«عايزة سواق صاحى وفاهم الشارع، ونسبتى ربع الكسب»', fee: 0, pct: 25, vehicles: ['r_taxi', 'r_microbus', 'r_tuktuk'] },
+  { id: 'b_ramadan', name: 'الحاج رمضان', quote: '«الأمانة قبل الفلوس… والحساب يوم بيوم»', fee: 220, pct: 0, vehicles: ['r_tuktuk', 'r_tonaya', 'r_taxi'] },
+  { id: 'b_fathy', name: 'المعلم فتحى', quote: '«15% بس، لكن لو الحتة اتبهدلت هتدفع التصليح!»', fee: 0, pct: 15, vehicles: ['r_tonaya', 'r_microbus', 'r_taxi'] },
+  { id: 'b_samah', name: 'سماح الشبراوى', quote: '«ركّز فى الركاب والباقى عليا… نسبة 20%»', fee: 0, pct: 20, vehicles: ['r_tuktuk', 'r_taxi', 'r_tonaya'] },
+];
+export const getBoss = (id) => BOSSES.find((b) => b.id === id) || BOSSES[0];
+export const getRentVehicle = (id) => RENT_VEHICLES.find((v) => v.id === id) || RENT_VEHICLES[2];
+
 // الألوان: أول لون (أبيض) ببلاش، والباقى بتشتريه لكل عربية
 export const COLORS = [
   { id: 'white', name: 'أبيض', hex: 0xf1f1ee, price: 0 },
@@ -138,3 +157,27 @@ export const fmtTime = (sec) => {
   const s = sec % 60;
   return m + ':' + String(s).padStart(2, '0');
 };
+
+// ---------- الورشة: الكلام والكماليات (الترويقة) ----------
+export const SLOGANS = [
+  'ماشى بالبركة', 'يا رب سترك', 'توكل على الله', 'الرزق على الله', 'خليك فى حالك',
+  'سواق جدع', 'ولا تحسدنى', 'اللى مش عاجبه يركب غيرى', 'مدد يا سيدة', 'اتأخرت؟ معلش الزحمة',
+];
+export const SLOGAN_PRICE = 150;
+// bonus = زيادة فى الأجرة لأن الراكب بيرتاح لما العربية متروقة
+export const ACCESSORIES = [
+  { id: 'lift', name: 'تعلية', icon: '⬆️', price: 1500, bonus: 0.05, desc: 'تعلية للعربية من تحت، شكلها أعلى وأهيب' },
+  { id: 'neon', name: 'نيون تحت العربية', icon: '💡', price: 800, bonus: 0.04, desc: 'إضاءة سماوى بتنوّر الأسفلت' },
+  { id: 'bar', name: 'لمبات السقف', icon: '🚨', price: 600, bonus: 0.03, desc: 'شريط لمبات فوق الكابينة' },
+  { id: 'spoiler', name: 'جناح خلفى', icon: '🏁', price: 700, bonus: 0.03, desc: 'سبويلر على الشنطة (مش للتوك توك والنقل)' },
+  { id: 'seats', name: 'فرش ونجف وبرفان', icon: '🛋️', price: 400, bonus: 0.04, desc: 'جوه العربية متروق، الراكب بيدّى أكتر' },
+  { id: 'bead', name: 'خرزة زرقا ومصحف', icon: '🧿', price: 150, bonus: 0.02, desc: 'ضد الحسد.. وبركة' },
+];
+export const SLOGAN_BONUS = 0.03;
+export const getAcc = (id) => ACCESSORIES.find((a) => a.id === id);
+export function modBonus(mods) {
+  if (!mods) return 0;
+  let b = mods.slogan ? SLOGAN_BONUS : 0;
+  for (const id of mods.accs || []) b += (getAcc(id) || { bonus: 0 }).bonus;
+  return b;
+}

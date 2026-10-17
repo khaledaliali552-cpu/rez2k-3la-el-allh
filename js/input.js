@@ -8,6 +8,7 @@ export class Input {
     this.steer = 0;
     this.throttle = 0;
     this.brake = 0;
+    this.wheel = null; // قيمة عجلة القيادة (-1..1) أو null لو مش مستخدمة
     this.enabled = false;
     this.onPause = null;
     this.onHorn = null;
@@ -51,6 +52,45 @@ export class Input {
     el.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
+  // عجلة قيادة دايرية: اسحب حواليها وهى بتلف
+  bindWheel(el, face) {
+    let id = null;
+    const calc = (e) => {
+      const r = el.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dy = e.clientY - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < r.width * 0.08) return;
+      const ang = Math.atan2(dx, -dy); // 0 = لفوق، موجب = يمين
+      this.wheel = clamp(ang / 1.0, -1, 1);
+      face.style.transform = `rotate(${this.wheel * 95}deg)`;
+    };
+    const end = (e) => {
+      if (id !== null && e.pointerId !== id) return;
+      id = null;
+      this.wheel = null;
+      face.style.transform = '';
+      face.classList.remove('down');
+    };
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      id = e.pointerId;
+      face.classList.add('down');
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch (err) {
+        /* ignore */
+      }
+      calc(e);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (id !== null && e.pointerId === id) calc(e);
+    });
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('lostpointercapture', end);
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
   poll(dt, auto) {
     const k = this.keys;
     const left = k.has('ArrowLeft') || k.has('KeyA') || this.touch.left;
@@ -58,8 +98,8 @@ export class Input {
     const gas = k.has('ArrowUp') || k.has('KeyW') || this.touch.gas || !!auto;
     const brake = k.has('ArrowDown') || k.has('KeyS') || k.has('Space') || this.touch.brake;
 
-    const target = (right ? 1 : 0) - (left ? 1 : 0);
-    const rate = target === 0 ? 10 : 5.5;
+    const target = this.wheel !== null ? this.wheel : (right ? 1 : 0) - (left ? 1 : 0);
+    const rate = this.wheel !== null ? 22 : target === 0 ? 16 : 10;
     this.steer += clamp(target - this.steer, -rate * dt, rate * dt);
 
     const gTarget = brake ? 0 : gas ? 1 : 0;
@@ -72,5 +112,6 @@ export class Input {
     this.keys.clear();
     for (const k of Object.keys(this.touch)) this.touch[k] = false;
     this.steer = this.throttle = this.brake = 0;
+    this.wheel = null;
   }
 }

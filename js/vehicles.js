@@ -4,7 +4,7 @@ import { mergeParts, profileGeo, unitBox, matrixFor } from './geo.js';
 
 const GLASS = 0x18222d;
 const DARK = 0x16181c;
-const bodyMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const bodyMat = new THREE.MeshPhongMaterial({ vertexColors: true, specular: 0x444a52, shininess: 70 });
 const litMat = new THREE.MeshBasicMaterial({ vertexColors: true });
 
 // الحجم المستخدم فى التصادم (عرض × طول)
@@ -33,10 +33,18 @@ function wheelGeo(r, w) {
     tire.rotateZ(Math.PI / 2);
     const rim = new THREE.CylinderGeometry(r * 0.62, r * 0.62, w + 0.03, 10);
     rim.rotateZ(Math.PI / 2);
-    g = mergeParts([
+    const parts = [
       { geo: tire, color: 0x121212 },
-      { geo: rim, color: 0xb9bec6 },
-    ]);
+      { geo: rim, color: 0xaeb4bd },
+    ];
+    const hub = new THREE.CylinderGeometry(r * 0.2, r * 0.2, w + 0.06, 8);
+    hub.rotateZ(Math.PI / 2);
+    parts.push({ geo: hub, color: 0x6b7078 });
+    for (let i = 0; i < 5; i++) {
+      const sp = new THREE.BoxGeometry(w + 0.05, r * 0.1, r * 0.55);
+      parts.push({ geo: sp, matrix: matrixFor(0, 0, 0, 1, 1, 1, (i / 5) * Math.PI * 2, 0, 0), color: 0x30343a });
+    }
+    g = mergeParts(parts);
     wheelCache.set(key, g);
   }
   return g;
@@ -71,8 +79,6 @@ class Parts {
       this.box(0.36, 0.13, 0.06, s * (w / 2 - 0.3), y, zf, 0xfff2c0, true);
       this.box(0.34, 0.13, 0.06, s * (w / 2 - 0.3), y, zr, 0xcc1f1f, true);
     }
-    this.box(0.5, 0.13, 0.04, 0, y - 0.22, zf - 0.005, plateColor, true);
-    this.box(0.5, 0.13, 0.04, 0, y - 0.22, zr + 0.005, plateColor, true);
     return this;
   }
   mirrors(x, y, z) {
@@ -286,7 +292,141 @@ export function buildVehicle(kind, colorHex, opts = {}) {
     }
   }
   const size = SIZES[recipe] || SIZES.sedan;
+  entry.body.computeBoundingBox();
+  addPlates(group, recipe, size, entry.body.boundingBox);
+  if (opts.mods) applyMods(group, recipe, size, opts.mods);
   return { group, wheels, w: size.w, l: size.l, kind: recipe };
+}
+
+// ---------- لوحات معدنية مصرية ----------
+let plateTex = null;
+function getPlateTex() {
+  if (plateTex) return plateTex;
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 64;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f4f4ee'; x.fillRect(0, 0, 128, 64);
+  x.fillStyle = '#1a4fa3'; x.fillRect(0, 0, 128, 14);
+  x.strokeStyle = '#1a4fa3'; x.lineWidth = 3; x.strokeRect(1.5, 1.5, 125, 61);
+  x.fillStyle = '#fff'; x.font = 'bold 11px sans-serif'; x.textAlign = 'center';
+  x.fillText('مصر', 64, 11);
+  x.fillStyle = '#111'; x.font = 'bold 26px sans-serif';
+  x.fillText('س ع ن  ٣٤٧٨', 64, 46);
+  plateTex = new THREE.CanvasTexture(c);
+  plateTex.colorSpace = THREE.SRGBColorSpace;
+  return plateTex;
+}
+const PLATE_Y = { tuktuk: 0.5, tonaya: 0.55, truck: 0.7, boxtruck: 0.7, pickup: 0.65, microbus: 0.62, suv: 0.72, coupe: 0.45 };
+let plateGeo = null;
+function addPlates(group, kind, size, bb) {
+  if (kind === 'tuktuk') return;
+  plateGeo = plateGeo || new THREE.PlaneGeometry(0.5, 0.25);
+  const m = new THREE.MeshBasicMaterial({ map: getPlateTex() });
+  const y = PLATE_Y[kind] || 0.5;
+  const f = new THREE.Mesh(plateGeo, m);
+  f.position.set(0, y, bb.min.z - 0.015);
+  f.rotation.y = Math.PI;
+  const b = new THREE.Mesh(plateGeo, m);
+  b.position.set(0, y, bb.max.z + 0.015);
+  group.add(f, b);
+}
+
+// ---------- الورشة: كلام + كماليات ----------
+const sloganCache = new Map();
+function sloganTex(text, bg) {
+  const key = text + '|' + bg;
+  let t = sloganCache.get(key);
+  if (t) return t;
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 128;
+  const x = c.getContext('2d');
+  x.clearRect(0, 0, 512, 128);
+  x.direction = 'rtl';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  let size = 70;
+  x.font = `bold ${size}px "Segoe UI", Tahoma, Arial, sans-serif`;
+  while (x.measureText(text).width > 480 && size > 20) {
+    size -= 4;
+    x.font = `bold ${size}px "Segoe UI", Tahoma, Arial, sans-serif`;
+  }
+  x.lineWidth = 9; x.strokeStyle = bg; x.lineJoin = 'round';
+  x.strokeText(text, 256, 66);
+  x.fillStyle = '#ffd23d';
+  x.fillText(text, 256, 66);
+  t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  sloganCache.set(key, t);
+  return t;
+}
+// ارتفاع وعرض مكان الكلام لكل نوع
+const SLOGAN_SPOT = {
+  tuktuk: { y: 0.75, len: 1.5 }, tonaya: { y: 0.95, len: 1.9 }, microbus: { y: 0.82, len: 2.6 }, boxtruck: { y: 1.4, len: 3 },
+  pickup: { y: 0.85, len: 2.2 }, truck: { y: 1.4, len: 3.4 }, suv: { y: 0.98, len: 2.4 }, coupe: { y: 0.75, len: 1.9 },
+};
+const ROOF_Y = { tuktuk: 1.75, tonaya: 1.7, microbus: 2.15, boxtruck: 2.7, pickup: 1.8, truck: 3.0, suv: 2.0, coupe: 1.28, sedan: 1.47, taxi: 1.47, hatch: 1.5 };
+const neonMat = new THREE.MeshBasicMaterial({ color: 0x35e8ff, transparent: true, opacity: 0.85 });
+const darkM = new THREE.MeshLambertMaterial({ color: 0x17191d });
+export const LIFT_Y = 0.16;
+
+function applyMods(group, kind, size, mods) {
+  const accs = mods.accs || [];
+  const ry = ROOF_Y[kind] || 1.5;
+  const lift = accs.includes('lift') ? LIFT_Y : 0;
+  if (lift) for (const ch of group.children) ch.position.y += lift;
+  if (mods.slogan) {
+    const sp = SLOGAN_SPOT[kind] || { y: 0.72, len: 1.9 };
+    const geo = new THREE.PlaneGeometry(sp.len, sp.len / 4);
+    const m = new THREE.MeshBasicMaterial({ map: sloganTex(mods.slogan, '#1c1c24'), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+    for (const sgn of [-1, 1]) {
+      const pl = new THREE.Mesh(geo, m);
+      pl.position.set(sgn * (size.w / 2 + 0.03), sp.y + lift, 0.1);
+      pl.rotation.y = sgn * Math.PI / 2;
+      group.add(pl);
+    }
+    if (kind !== 'tuktuk') {
+      const g2 = new THREE.PlaneGeometry(Math.min(sp.len, size.w - 0.15), Math.min(sp.len, size.w - 0.15) / 4);
+      const pl = new THREE.Mesh(g2, m);
+      pl.position.set(0, sp.y + 0.3 + lift, size.l / 2 + 0.05);
+      group.add(pl);
+    }
+  }
+  if (accs.includes('neon')) {
+    const g = new THREE.BoxGeometry(size.w - 0.3, 0.05, size.l - 0.8);
+    const n = new THREE.Mesh(g, neonMat);
+    n.position.set(0, 0.12 + lift, 0);
+    group.add(n);
+    const glow = new THREE.PointLight(0x35e8ff, 1.2, 4);
+    glow.position.set(0, 0.2, 0);
+    group.add(glow);
+  }
+  if (accs.includes('bar')) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(Math.min(1.4, size.w - 0.4), 0.12, 0.22), darkM);
+    bar.position.set(0, ry + 0.1 + lift, -0.2);
+    group.add(bar);
+    for (const [i, col] of [[-1, 0xff3030], [1, 0x3060ff]]) {
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.1, 0.18), new THREE.MeshBasicMaterial({ color: col }));
+      l.position.set(i * 0.33, ry + 0.2 + lift, -0.2);
+      group.add(l);
+    }
+  }
+  if (accs.includes('spoiler') && kind !== 'tuktuk' && kind !== 'truck') {
+    const z = size.l / 2 - 0.1;
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(size.w - 0.3, 0.06, 0.34), darkM);
+    wing.position.set(0, (ROOF_Y[kind] || 1.4) * 0.72 + lift, z);
+    group.add(wing);
+    for (const sgn of [-1, 1]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.08), darkM);
+      leg.position.set(sgn * (size.w / 2 - 0.35), wing.position.y - 0.12, z);
+      group.add(leg);
+    }
+  }
+  if (accs.includes('bead')) {
+    const bead = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0x2a7fff }));
+    bead.position.set(0, (ROOF_Y[kind] || 1.4) - 0.3 + lift, -size.l * 0.18);
+    group.add(bead);
+  }
 }
 
 function defaultAccent(kind) {

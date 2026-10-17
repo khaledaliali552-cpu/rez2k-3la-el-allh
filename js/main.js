@@ -14,7 +14,7 @@ import { UI } from './ui.js';
 import * as Save from './save.js';
 import {
   QUEST_POOL, ACHIEVEMENTS, SHIFT_SECONDS, RADAR_FINE, THEME_ORDER, WELCOME_BONUS,
-  getCar, getColor, colorKey, pick, clamp, fmtMoney, fmtTime,
+  getCar, getColor, colorKey, getAcc, SLOGAN_PRICE, modBonus, getBoss, getRentVehicle, pick, clamp, fmtMoney, fmtTime,
 } from './data.js';
 
 const GAME_NAME_LOCAL = 'أجرة الكورنيش';
@@ -46,6 +46,7 @@ class Game {
     this.player = new PlayerCar(this.scene);
     this.traffic = new Traffic(this.scene);
     this.rides = new Rides(this.scene);
+    this.rides.onDest = (s, name) => this.world.addBoard(s, name);
     this.input = new Input();
     this.sfx = new Sfx();
     this.radio = new Radio(this.state.settings);
@@ -68,8 +69,8 @@ class Game {
 
     this.input.onPause = () => (this.mode === 'playing' ? this.pause() : this.mode === 'paused' ? this.resume() : null);
     this.input.onHorn = () => this.horn();
-    this.input.bindHold(document.getElementById('t-left'), 'left');
-    this.input.bindHold(document.getElementById('t-right'), 'right');
+    this.input.bindWheel(document.getElementById('wheel'), document.getElementById('wheel-face'));
+    if (IS_TOUCH) document.body.classList.add('touch-mode');
     this.input.bindHold(document.getElementById('t-gas'), 'gas');
     this.input.bindHold(document.getElementById('t-brake'), 'brake');
     document.getElementById('t-horn').addEventListener('pointerdown', (e) => {
@@ -115,13 +116,25 @@ class Game {
   }
 
   carSpec(id) {
+    if (id === 'boss_taxi') {
+      const w = this.state.work;
+      const boss = getBoss(w.boss);
+      const veh = getRentVehicle(boss.vehicles.includes(w.vehicle) ? w.vehicle : boss.vehicles[0]);
+      const fee = boss.fee ? Math.round((boss.fee * veh.feeMul) / 5) * 5 : 0;
+      return { ...veh, id: 'boss_taxi', name: `${veh.name} (${boss.name})`, rented: true, fee, pct: boss.pct, bossName: boss.name, price: 0 };
+    }
     if (typeof id === 'string' && id.startsWith('job:')) {
       const job = this.jobById(id.slice(4));
       if (!job) return null;
       const base = getCar(job.carId);
       return { ...base, id, name: `${base.name} (${job.ownerName})`, rented: false, fee: 0, job };
     }
-    return getCar(id);
+    const base = getCar(id);
+    if (base && this.state.owned.includes(id)) {
+      const b = modBonus(this.state.mods[id]);
+      if (b) return { ...base, fareMul: (base.fareMul || 1) * (1 + b) };
+    }
+    return base;
   }
 
   validSelected() {
@@ -221,7 +234,7 @@ class Game {
 
   setPlayerCar(id) {
     const car = this.carSpec(id) || getCar('boss_taxi');
-    this.player.setSpec(car, this.carColor(id));
+    this.player.setSpec(car, this.carColor(id), this.state.owned.includes(id) ? this.state.mods[id] : null);
   }
 
   resize() {
@@ -265,8 +278,17 @@ class Game {
   }
 
   // ---------- الوضع الاستعراضى (قائمة / جراج) ----------
+  get free() {
+    return this.state.work.mode === 'free' && this.isOwnCarSelected();
+  }
+
+  isOwnCarSelected() {
+    const st = this.state;
+    return st.owned.includes(st.selected) && !getCar(st.selected).rented;
+  }
+
   applyRoad() {
-    this.road = getRoad(this.state.selectedRoad);
+    this.road = getRoad(this.free ? 'free' : this.state.selectedRoad);
     if (this.world.road !== this.road) this.world.setRoad(this.road);
     this.traffic.setRoad(this.road);
     this.rides.setRoad(this.road);
@@ -324,7 +346,8 @@ class Game {
 
   openRoads() {
     this.sfx.init();
-    this.ui.renderRoads();
+    this.applyRoad();
+    this.ui.renderSetup();
     this.ui.show('roads');
   }
 
@@ -341,14 +364,45 @@ class Game {
   selectRoad(id) {
     this.state.selectedRoad = id;
     this.save();
-    this.applyRoad();
-    this.world.reset(this.state.day * 131 + 7);
-    this.traffic.reset(40);
+    this.ui.renderSetup();
   }
 
-  // اختار الطريق وابدأ
-  startOnRoad(id) {
-    this.selectRoad(id);
+  setWorkCar(id) {
+    this.state.selected = id;
+    this.previewId = id;
+    if (!this.isOwnCarSelected()) this.state.work.mode = 'shift';
+    this.save();
+    this.ui.renderSetup();
+  }
+
+  setBoss(id) {
+    const w = this.state.work;
+    w.boss = id;
+    const boss = getBoss(id);
+    if (!boss.vehicles.includes(w.vehicle)) w.vehicle = boss.vehicles[0];
+    this.save();
+    this.ui.renderSetup();
+  }
+
+  setVehicle(id) {
+    this.state.work.vehicle = id;
+    this.save();
+    this.ui.renderSetup();
+  }
+
+  setMode(mode) {
+    const spec = this.carSpec(this.state.selected);
+    if (mode === 'free' && (!this.isOwnCarSelected() || spec.cap < 3)) {
+      this.ui.toast('الشغل الحر محتاج عربية بتاعتك بتشيل 3 ركاب على الأقل', 'bad');
+      return;
+    }
+    this.state.work.mode = mode;
+    this.save();
+    this.ui.renderSetup();
+  }
+
+  startFromSetup() {
+    this.applyRoad();
     this.onStartClick();
   }
 
@@ -384,6 +438,94 @@ class Game {
     this.previewId = id;
     this.save();
     this.ui.renderGarage();
+  }
+
+  // ---------- الورشة ----------
+  ownedList() {
+    return this.state.owned.filter((id) => !getCar(id).rented);
+  }
+
+  openWorkshop() {
+    const list = this.ownedList();
+    if (!list.length) {
+      this.ui.toast('الورشة للعربيات اللى بتملكها. اشترى عربية الأول 🚗', 'bad');
+      return;
+    }
+    this.wsCar = list.includes(this.state.selected) ? this.state.selected : list[0];
+    this.mode = 'garage';
+    this.previewId = this.wsCar;
+    this.enterPreview();
+    this.mode = 'garage';
+    this.ui.renderWorkshop();
+    this.ui.show('workshop');
+  }
+
+  wsPick(id) {
+    this.wsCar = id;
+    this.previewId = id;
+    this.refreshWs();
+  }
+
+  refreshWs() {
+    this.setPlayerCar(this.wsCar);
+    this.player.reset(40, 8.7);
+    this.player.damage = this.state.damage[this.wsCar] || 0;
+    this.ui.renderWorkshop();
+  }
+
+  _pay(cost) {
+    if (this.state.money < cost) {
+      this.ui.toast(`محتاج ${fmtMoney(cost)} جنيه`, 'bad');
+      return false;
+    }
+    this.state.money -= cost;
+    this.sfx.init();
+    this.sfx.coin();
+    return true;
+  }
+
+  wsRepair() {
+    const id = this.wsCar;
+    const dmg = this.state.damage[id] || 0;
+    const cost = Math.round(dmg * getCar(id).repair);
+    if (dmg < 1) return;
+    if (!this._pay(cost)) return;
+    this.state.damage[id] = 0;
+    this.save();
+    this.ui.toast('🔧 العربية اتصلّحت زى الجديدة', 'good');
+    this.refreshWs();
+  }
+
+  wsSlogan(text) {
+    const id = this.wsCar;
+    const mods = (this.state.mods[id] = this.state.mods[id] || { slogan: '', accs: [] });
+    text = (text || '').trim().slice(0, 28);
+    if (text === mods.slogan) return;
+    if (!text) {
+      mods.slogan = '';
+    } else {
+      if (!this._pay(SLOGAN_PRICE)) return;
+      mods.slogan = text;
+      this.ui.toast('✍️ الكلام اتكتب على العربية', 'gold');
+    }
+    this.save();
+    this.refreshWs();
+  }
+
+  wsAcc(accId) {
+    const id = this.wsCar;
+    const acc = getAcc(accId);
+    const mods = (this.state.mods[id] = this.state.mods[id] || { slogan: '', accs: [] });
+    mods.accs = mods.accs || [];
+    if (mods.accs.includes(accId)) {
+      mods.accs = mods.accs.filter((a) => a !== accId); // فك (من غير استرداد)
+    } else {
+      if (!this._pay(acc.price)) return;
+      mods.accs.push(accId);
+      this.ui.toast(`${acc.icon} اتركّبت: ${acc.name}`, 'gold');
+    }
+    this.save();
+    this.refreshWs();
   }
 
   buyColor(carId, colorId) {
@@ -458,9 +600,13 @@ class Game {
     this.world.reset(st.day * 131 + 7);
     this.setPlayerCar(st.selected);
     this.player.reset(0, 5.4);
+    const spec0 = this.validSelected();
+    if (st.owned.includes(spec0.id) && !spec0.rented) this.player.damage = st.damage[spec0.id] || 0;
     this.traffic.reset(0);
     this.rides.reset();
     this.shift = newShift();
+    if (this.road.free) this.shift.t = Infinity;
+    this.shift.free = !!this.road.free;
     this.questDone = new Set();
     this.nextRadar = 0;
     this.shake = 0;
@@ -477,7 +623,7 @@ class Game {
     if (st.settings.radio && !this.radio.playing) this.radio.start(st.settings.radioTrack || 0);
     else this.radio.resumeForGame();
     this.ui.setSoundLabel(st.settings.sound);
-    this.ui.toast(`${this.road.tagIcon} ${this.road.name} · ${this.road.fare} جنيه للفرد`, 'gold');
+    this.ui.toast(this.road.free ? '🛣️ شغل حر: وصّل 3 أفراد لمسافات بعيدة' : `${this.road.tagIcon} ${this.road.name} · ${this.road.fare} جنيه للفرد`, 'gold');
   }
 
   pause() {
@@ -549,8 +695,12 @@ class Game {
     const qres = this.questView();
     const questReward = qres.filter((q) => q.done).reduce((a, q) => a + q.reward, 0);
     const fee = car.rented ? car.fee : 0;
-    const cut = car.job ? Math.round((gross * car.job.share) / 100) : 0;
-    const repair = Math.round(this.player.damage * car.repair);
+    const cutPct = car.job ? car.job.share : car.pct || 0;
+    const cutName = car.job ? car.job.ownerName : car.bossName;
+    const cut = Math.round((gross * cutPct) / 100);
+    const ownCar = st.owned.includes(car.id) && !car.rented && !car.job;
+    const repair = ownCar ? 0 : Math.round(this.player.damage * car.repair);
+    if (ownCar) st.damage[car.id] = Math.round(this.player.damage * 10) / 10;
 
     st.stats.rides += s.rides;
     st.stats.people += s.people;
@@ -575,14 +725,15 @@ class Game {
       this.cloud.createPayout(car.job, cut).catch((e) => this.ui.toast('تعذر إرسال حصة صاحب العربية: ' + (e.code || e.message), 'bad'));
     }
 
-    const rows = [{ label: `مشاوير على ${this.road.name}`, value: `${s.rides} (${s.people} فرد)` }, { label: 'الأجرة', value: '+' + fmtMoney(s.fares), cls: 'pos' }];
+    const rows = [{ label: this.road.free ? 'مشاوير سفر (خطافى)' : `مشاوير على ${this.road.name}`, value: `${s.rides} (${s.people} فرد)` }, { label: 'الأجرة', value: '+' + fmtMoney(s.fares), cls: 'pos' }];
     if (s.tips) rows.push({ label: 'البقشيش', value: '+' + fmtMoney(s.tips), cls: 'pos' });
     if (questReward) rows.push({ label: 'مكافآت المهام', value: '+' + fmtMoney(questReward), cls: 'pos' });
     if (achReward) rows.push({ label: 'مكافآت الإنجازات', value: '+' + fmtMoney(achReward), cls: 'pos' });
-    if (cut) rows.push({ label: `حصة ${car.job.ownerName} (${car.job.share}%)`, value: '-' + fmtMoney(cut), cls: 'neg' });
-    if (fee) rows.push({ label: 'حساب المعلم', value: '-' + fmtMoney(fee), cls: 'neg' });
+    if (cut) rows.push({ label: `حصة ${cutName} (${cutPct}%)`, value: '-' + fmtMoney(cut), cls: 'neg' });
+    if (fee) rows.push({ label: `يومية ${cutName || 'المعلم'}`, value: '-' + fmtMoney(fee), cls: 'neg' });
     if (s.fines) rows.push({ label: 'غرامات الرادار', value: '-' + fmtMoney(s.fines), cls: 'neg' });
     if (repair) rows.push({ label: `تصليح العربية (${Math.round(this.player.damage)}% ضرر)`, value: '-' + fmtMoney(repair), cls: 'neg' });
+    else if (ownCar && this.player.damage > 1) rows.push({ label: `ضرر العربية ${Math.round(this.player.damage)}% (صلّحها فى الورشة)`, value: '', cls: '' });
     rows.push({ label: 'صافى الوردية', value: (net >= 0 ? '+' : '') + fmtMoney(net), cls: 'total ' + (net >= 0 ? 'pos' : 'neg') });
     rows.push({ label: 'رصيدك دلوقتى', value: fmtMoney(st.money) + ' جنيه', cls: 'total' });
 

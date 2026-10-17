@@ -132,6 +132,7 @@ export class World {
     this.themeName = 'day';
     this.dummy = new THREE.Object3D();
     this.road = getRoad('bashawat');
+    this.extraBoards = [];
     this.boardTexCache = new Map();
     this.limitTexCache = new Map();
 
@@ -202,8 +203,34 @@ export class World {
     });
 
     // --- واجهات المبانى (الألوان بتتضرب فى لون المبنى) ---
-    const S = 32; // بكسل لكل متر
-    const tile = (floorH, draw) => canvasTex(TILE_W * S, floorH * S, draw, true);
+    const S = 32; // بكسل لكل متر (منطق الرسم)
+    const Q = 1.5; // دقة أعلى للنسيج
+    const weather = (g, w, h) => {
+      // تعتيق: تدرّج أسود خفيف فوق، تسريبات مية، وبقع
+      const gr = g.createLinearGradient(0, 0, 0, h);
+      gr.addColorStop(0, 'rgba(0,0,0,0.10)');
+      gr.addColorStop(0.5, 'rgba(0,0,0,0)');
+      gr.addColorStop(1, 'rgba(60,45,30,0.14)');
+      g.fillStyle = gr;
+      g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 70; i++) {
+        g.fillStyle = `rgba(${rng() < 0.5 ? '70,60,45' : '255,255,255'},${0.03 + rng() * 0.05})`;
+        g.fillRect(rng() * w, rng() * h, 2 + rng() * 14, 2 + rng() * 9);
+      }
+      for (let i = 0; i < 9; i++) {
+        const x = rng() * w;
+        const gg = g.createLinearGradient(0, 0, 0, h);
+        g.fillStyle = `rgba(40,35,28,${0.05 + rng() * 0.05})`;
+        g.fillRect(x, rng() * h * 0.3, 2 + rng() * 3, h * (0.3 + rng() * 0.5));
+      }
+    };
+    const tile = (floorH, draw, lit) =>
+      canvasTex(TILE_W * S * Q, floorH * S * Q, (g, W, H) => {
+        g.scale(Q, Q);
+        draw(g, W / Q, H / Q);
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        if (!lit) weather(g, W, H);
+      }, true);
     const rr = (g, x, y, w, h, c) => {
       g.fillStyle = c;
       g.fillRect(x, y, w, h);
@@ -228,6 +255,8 @@ export class World {
         rr(g, x + 32, 16, 64, 46, '#33475a');
         rr(g, x + 32, 16, 64, 6, 'rgba(255,255,255,0.22)');
         rr(g, x + 63, 16, 2, 46, '#e6e1d4');
+        if (rng() < 0.4) rr(g, x + 34, 17, 28, 20 + rng() * 22, rng() < 0.5 ? 'rgba(230,205,170,0.8)' : 'rgba(120,150,170,0.7)'); // ستارة
+        rr(g, x + 26, 66, 76, 2, 'rgba(0,0,0,0.25)');
         // بلكونة
         rr(g, x + 8, 66, 112, 7, '#cfc9ba');
         g.fillStyle = '#4a4d55';
@@ -296,8 +325,8 @@ export class World {
       rr(g, 0, h - 8, w, 8, '#b9bcb8');
     };
     const mk = (name, floorH, fn) => {
-      this.facade[name] = tile(floorH, (g, w, h) => fn(g, w, h, false));
-      this.facadeLit[name] = tile(floorH, (g, w, h) => fn(g, w, h, true));
+      this.facade[name] = tile(floorH, (g, w, h) => fn(g, w, h, false), false);
+      this.facadeLit[name] = tile(floorH, (g, w, h) => fn(g, w, h, true), true);
     };
     mk('apt', 3, aptDraw);
     mk('old', 3, oldDraw);
@@ -504,6 +533,7 @@ export class World {
   reset(seed) {
     for (const c of this.chunks.values()) this._disposeChunk(c);
     this.chunks.clear();
+    this.extraBoards = [];
     this.seed = seed || 1;
   }
 
@@ -576,6 +606,47 @@ export class World {
       put(style, this._facadeBox(D, h - SHOP_H, L, 'floor', style), SHOP_H + (h - SHOP_H) / 2, tint);
     } else {
       put(style, this._facadeBox(D, h, L, 'floor', style), h / 2, tint);
+    }
+    const side = x < 0 ? -1 : 1;
+    const fx = -side * (D / 2); // وش المبنى ناحية الطريق (محلى)
+    const box = (w, hh, l, lx, cy, lz, color, tl = 0) => {
+      (bag.vtx = bag.vtx || []).push({
+        geo: this.unitBox,
+        matrix: base(cy).multiply(new THREE.Matrix4().makeTranslation(lx, 0, lz)).multiply(new THREE.Matrix4().makeScale(w, hh, l)),
+        color,
+      });
+    };
+    const baseY = shops ? SHOP_H : 0;
+    const floorsN = Math.max(1, Math.round((h - baseY) / 3));
+    // بلكونات بارزة للشقق (محاذية لنسيج الواجهة: u=0 من طرف المبنى)
+    if (style === 'apt' && L > 8) {
+      const bayW = TILE_W / 3;
+      const nBays = Math.floor((L - 0.5) / bayW);
+      for (let f = 0; f < floorsN; f++) {
+        const y = baseY + f * 3;
+        for (let t = 0; t < nBays; t++) {
+          if (rng() < 0.2) continue;
+          const lz = side > 0 ? -L / 2 + (t + 0.5) * bayW : L / 2 - (t + 0.5) * bayW;
+          box(1.0, 0.14, bayW * 0.87, fx - side * 0.5, y + 0.72, lz, 0xc9c3b4);
+          box(0.05, 0.85, bayW * 0.87, fx - side * 1.0, y + 1.2, lz, 0x4a4d55);
+        }
+      }
+    }
+    // مظلة المحل
+    if (shops && rng() < 0.65) {
+      const col = [0xd62828, 0x1d4e89, 0x2f8f5b, 0xe8741c, 0x7a3fb0][Math.floor(rng() * 5)];
+      const aw = L * (0.45 + rng() * 0.4);
+      (bag.vtx = bag.vtx || []).push({
+        geo: this.unitBox,
+        matrix: base(SHOP_H - 0.35).multiply(new THREE.Matrix4().makeTranslation(fx - side * 0.6, 0, (rng() - 0.5) * (L - aw))).multiply(new THREE.Matrix4().makeScale(1.4, 0.08, aw)),
+        color: col,
+      });
+    }
+    // سور السطح
+    if (style !== 'shed') {
+      box(0.3, 0.6, L, fx + side * 0.15, h + 0.3, 0, 0xb8b2a4);
+      box(D, 0.6, 0.3, 0, h + 0.3, -L / 2 + 0.15, 0xb8b2a4);
+      box(D, 0.6, 0.3, 0, h + 0.3, L / 2 - 0.15, 0xb8b2a4);
     }
     // سطح: خزانات/أسوار
     if (style !== 'shed' && rng() < 0.6) {
@@ -834,50 +905,12 @@ export class World {
     }
 
     // لافتات المحطات
-    for (let k = landmarkAfter(road, s0); landmarkS(road, k) - 70 < s1; k++) {
-      const ls = landmarkS(road, k);
-      const name = landmarkAt(road, k).name;
-      const tex = this._boardTex(name);
-      let mat = this._boardMat && this._boardMat.get(name);
-      if (!this._boardMat) this._boardMat = new Map();
-      if (!mat) {
-        mat = new THREE.MeshBasicMaterial({ map: tex });
-        this._boardMat.set(name, mat);
-      }
-      const gs = ls - 70;
-      if (gs >= s0 && gs < s1) {
-        const yaw = -Math.atan(dcx(gs));
-        const c = cx(gs);
-        const board = new THREE.Mesh(this.planeGeo, mat);
-        board.scale.set(10, 1.9, 1);
-        board.position.set(c + 0.8, 6.3, -gs);
-        board.rotation.y = yaw;
-        group.add(board);
-        const beam = new THREE.Mesh(this.unitBox, this.mMetal);
-        beam.scale.set(19, 0.3, 0.3);
-        beam.position.set(c + 0.8, 7.5, -gs - 0.1);
-        beam.rotation.y = yaw;
-        group.add(beam);
-        for (const px of [-8.2, 9.8]) {
-          const post = new THREE.Mesh(this.unitBox, this.mMetal);
-          post.scale.set(0.3, 7.5, 0.3);
-          post.position.set(c + px, 3.75, -gs - 0.1);
-          group.add(post);
-        }
-      }
-      if (ls >= s0 && ls < s1) {
-        const c = cx(ls);
-        const board = new THREE.Mesh(this.planeGeo, mat);
-        board.scale.set(4.2, 0.8, 1);
-        board.position.set(c + 10.4, 3.6, -ls);
-        board.rotation.y = -Math.atan(dcx(ls));
-        group.add(board);
-        const post = new THREE.Mesh(this.unitBox, this.mMetal);
-        post.scale.set(0.14, 3.6, 0.14);
-        post.position.set(c + 10.4, 1.8, -ls - 0.1);
-        group.add(post);
+    if (road.landmarks.length) {
+      for (let k = landmarkAfter(road, s0); landmarkS(road, k) - 70 < s1; k++) {
+        this._landmarkSigns(group, landmarkS(road, k), landmarkAt(road, k).name, s0, s1);
       }
     }
+    for (const b of this.extraBoards) this._landmarkSigns(group, b.s, b.name, s0, s1);
 
     // رادار: لافتة السرعة قبله بـ 120 متر
     for (let k = nextRadarIndex(road, s0 - 130); radarS(road, k) - 130 < s1; k++) {
@@ -901,6 +934,63 @@ export class World {
 
     this.scene.add(group);
     return { group, geos, instanced };
+  }
+
+  _boardMaterial(name) {
+    if (!this._boardMat) this._boardMat = new Map();
+    let mat = this._boardMat.get(name);
+    if (!mat) {
+      mat = new THREE.MeshBasicMaterial({ map: this._boardTex(name) });
+      this._boardMat.set(name, mat);
+    }
+    return mat;
+  }
+
+  // لافتة المحطة: بوابة فوق الطريق قبلها بـ 70م + لافتة صغيرة عند المكان
+  _landmarkSigns(group, ls, name, s0, s1) {
+    const mat = this._boardMaterial(name);
+    const gs = ls - 70;
+    if (gs >= s0 && gs < s1) {
+      const yaw = -Math.atan(dcx(gs));
+      const c = cx(gs);
+      const board = new THREE.Mesh(this.planeGeo, mat);
+      board.scale.set(10, 1.9, 1);
+      board.position.set(c + 0.8, 6.3, -gs);
+      board.rotation.y = yaw;
+      group.add(board);
+      const beam = new THREE.Mesh(this.unitBox, this.mMetal);
+      beam.scale.set(19, 0.3, 0.3);
+      beam.position.set(c + 0.8, 7.5, -gs - 0.1);
+      beam.rotation.y = yaw;
+      group.add(beam);
+      for (const px of [-8.2, 9.8]) {
+        const post = new THREE.Mesh(this.unitBox, this.mMetal);
+        post.scale.set(0.3, 7.5, 0.3);
+        post.position.set(c + px, 3.75, -gs - 0.1);
+        group.add(post);
+      }
+    }
+    if (ls >= s0 && ls < s1) {
+      const c = cx(ls);
+      const board = new THREE.Mesh(this.planeGeo, mat);
+      board.scale.set(4.2, 0.8, 1);
+      board.position.set(c + 10.4, 3.6, -ls);
+      board.rotation.y = -Math.atan(dcx(ls));
+      group.add(board);
+      const post = new THREE.Mesh(this.unitBox, this.mMetal);
+      post.scale.set(0.14, 3.6, 0.14);
+      post.position.set(c + 10.4, 1.8, -ls - 0.1);
+      group.add(post);
+    }
+  }
+
+  // وجهة ديناميك (للشغل الحر): بتتحط حتى لو الـ chunk اتبنى
+  addBoard(s, name) {
+    this.extraBoards.push({ s, name });
+    for (const [i, c] of this.chunks) {
+      const s0 = i * CHUNK;
+      this._landmarkSigns(c.group, s, name, s0, s0 + CHUNK);
+    }
   }
 
   _radarBox(group, s) {

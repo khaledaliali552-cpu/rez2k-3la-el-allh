@@ -41,9 +41,10 @@
 
   <!-- ========== أزرار اللمس ========== -->
   <div id="touch" class="hidden">
-    <div class="t-left">
-      <button id="t-left" class="tbtn" aria-label="شمال">◀</button>
-      <button id="t-right" class="tbtn" aria-label="يمين">▶</button>
+    <div class="wheel" id="wheel" aria-label="عجلة القيادة">
+      <div class="wheel-face" id="wheel-face">
+        <i class="w-hub"></i><i class="w-spoke s1"></i><i class="w-spoke s2"></i><i class="w-mark"></i>
+      </div>
     </div>
     <div class="t-right">
       <button id="t-horn" class="tbtn small" aria-label="كلاكس">📣</button>
@@ -59,9 +60,10 @@
       <h1>أجرة الكورنيش</h1>
       <p class="sub">سواق على طرق إسكندرية. وصّل الركاب، اجمع فلوس، لوّن عربيتك واشتريها.</p>
       <div class="status" id="menu-status"></div>
-      <button class="btn primary" id="m-start">اختار الطريق وابدأ</button>
+      <button class="btn primary" id="m-start">جهّز الوردية وابدأ</button>
       <div class="row">
         <button class="btn" id="m-garage">🚗 الجراج</button>
+        <button class="btn" id="m-workshop">🔧 الورشة</button>
         <button class="btn" id="m-quests">🏆 المهام</button>
         <button class="btn" id="m-settings">⚙️ الإعدادات</button>
       </div>
@@ -82,7 +84,19 @@
         <div class="pill" id="garage-money"></div>
       </div>
       <div id="garage-list" class="garage-list"></div>
-      <button class="btn" id="g-back">رجوع</button>
+      <div class="row"><button class="btn" id="g-workshop">🔧 الورشة</button><button class="btn" id="g-back">رجوع</button></div>
+    </div>
+  </section>
+
+  <!-- ========== الورشة ========== -->
+  <section id="screen-workshop" class="screen hidden">
+    <div class="panel wide">
+      <div class="panel-head">
+        <h2>🔧 الورشة</h2>
+        <div class="pill" id="ws-money"></div>
+      </div>
+      <div id="workshop-body" class="ws-body"></div>
+      <button class="btn" id="w-back">رجوع</button>
     </div>
   </section>
 
@@ -162,10 +176,12 @@
   <!-- ========== اختيار الطريق ========== -->
   <section id="screen-roads" class="screen hidden">
     <div class="panel wide">
-      <div class="panel-head"><h2>اختار طريقك</h2><div class="pill" id="roads-money"></div></div>
-      <p class="sub" style="margin:0 0 4px">الأجرة بتتحسب <b>للفرد</b>، والمجموعة بتدفع على عدد أفرادها.</p>
-      <div id="road-list" class="road-list"></div>
-      <button class="btn" id="r-back">رجوع</button>
+      <div class="panel-head"><h2>جهّز وردتك</h2><div class="pill" id="roads-money"></div></div>
+      <div id="setup-body" class="setup"></div>
+      <div class="row sticky">
+        <button class="btn primary" id="setup-go">ابدأ</button>
+        <button class="btn" id="r-back">رجوع</button>
+      </div>
     </div>
   </section>
 

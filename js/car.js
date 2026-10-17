@@ -21,10 +21,10 @@ export class PlayerCar {
     this.reset();
   }
 
-  setSpec(spec, colorHex) {
+  setSpec(spec, colorHex, mods) {
     this.spec = spec;
     if (this.model) this.inner.remove(this.model.group);
-    this.model = buildVehicle(spec.body, colorHex, { wheels: true });
+    this.model = buildVehicle(spec.body, colorHex, { wheels: true, mods });
     this.inner.add(this.model.group);
     this.w = this.model.w;
     this.l = this.model.l;
@@ -69,10 +69,10 @@ export class PlayerCar {
     this.accel = (this.v - vOld) / Math.max(dt, 1e-4);
 
     // انحراف جانبى
-    const grip = clamp(this.v / 4, 0, 1);
-    const maxLat = 7.4 * spec.handling * grip * (1 - 0.35 * (this.v / spec.vmax));
+    const grip = clamp(this.v / 2.5, 0, 1);
+    const maxLat = 11.5 * spec.handling * grip * (1 - 0.3 * (this.v / spec.vmax));
     const target = input.steer * (settings.steer || 1) * maxLat;
-    this.vx += (target - this.vx) * Math.min(1, dt * 8);
+    this.vx += (target - this.vx) * Math.min(1, dt * 14);
     this.x += this.vx * dt;
     this.s += this.v * dt;
 
@@ -99,7 +99,7 @@ export class PlayerCar {
       events.push({ type: 'hardBrake' });
       this.hardCd = 1.0;
     }
-    if (Math.abs(this.vx) > 5.6 && this.v > 18 && this.swerveCd <= 0) {
+    if (Math.abs(this.vx) > 8.5 && this.v > 20 && this.swerveCd <= 0) {
       events.push({ type: 'swerve' });
       this.swerveCd = 1.2;
     }

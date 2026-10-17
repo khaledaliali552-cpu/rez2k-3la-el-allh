@@ -1,10 +1,11 @@
 // الواجهة: شاشات وقوايم وHUD (DOM بس، من غير منطق لعب)
-import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, WELCOME_BONUS, fmtMoney, fmtTime, getCar } from './data.js';
+import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, WELCOME_BONUS, BOSSES, SLOGANS, SLOGAN_PRICE, ACCESSORIES, modBonus, fmtMoney, fmtTime, getCar, getBoss, getRentVehicle } from './data.js';
+import { carThumb } from './thumbs.js';
 import { ROADS } from './roads.js';
 import { errText } from './cloud.js';
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ['menu', 'garage', 'quests', 'settings', 'tutorial', 'pause', 'summary', 'roads', 'invite', 'radio', 'account'];
+const SCREENS = ['menu', 'garage', 'quests', 'settings', 'tutorial', 'pause', 'summary', 'roads', 'invite', 'radio', 'account', 'workshop'];
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class UI {
@@ -88,14 +89,36 @@ export class UI {
       const it = e.target.closest('[data-i]');
       if (it) g.radio.start(+it.dataset.i);
     });
-    $('road-list').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-road]');
-      if (b) g.startOnRoad(b.dataset.road);
+    $('setup-body').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-a]');
+      if (!b || b.disabled) return;
+      const v = b.dataset.v;
+      const a = b.dataset.a;
+      if (a === 'car') g.setWorkCar(v);
+      else if (a === 'boss') g.setBoss(v);
+      else if (a === 'veh') g.setVehicle(v);
+      else if (a === 'mode') g.setMode(v);
+      else if (a === 'road') g.selectRoad(v);
     });
+    $('setup-go').onclick = () => g.startFromSetup();
     $('m-garage').onclick = () => g.openGarage();
     $('m-quests').onclick = () => g.openQuests();
     $('m-settings').onclick = () => g.openSettings();
     $('g-back').onclick = () => g.backToMenu();
+    $('m-workshop').onclick = () => g.openWorkshop();
+    $('w-back').onclick = () => g.backToMenu();
+    $('g-workshop').onclick = () => g.openWorkshop();
+    $('workshop-body').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-w]');
+      if (!b) return;
+      const k = b.dataset.w;
+      if (k === 'car') g.wsPick(b.dataset.v);
+      else if (k === 'repair') g.wsRepair();
+      else if (k === 'acc') g.wsAcc(b.dataset.v);
+      else if (k === 'slogan') g.wsSlogan(b.dataset.v);
+      else if (k === 'custom') g.wsSlogan(document.getElementById('w-custom').value);
+      else if (k === 'noslogan') g.wsSlogan('');
+    });
     $('q-back').onclick = () => g.backToMenu();
     $('s-back').onclick = () => g.backToMenu();
     $('tu-go').onclick = () => g.tutorialGo();
@@ -159,6 +182,7 @@ export class UI {
     const list = $('garage-list');
     list.innerHTML = '';
     for (const car of CARS) {
+      if (car.rented) continue;
       const owned = st.owned.includes(car.id);
       const div = document.createElement('div');
       div.className = 'gcar' + (st.selected === car.id ? ' sel' : '') + (g.previewId === car.id ? ' prev' : '');
@@ -184,7 +208,9 @@ export class UI {
           }).join('') +
           '</div><div class="meta" style="font-size:11px;color:var(--muted)">الألوان المقفولة بتتشترى بالفلوس (السعر مكتوب عليها)</div>';
       }
+      const thumb = carThumb(car.body, g.carColor(car.id), owned ? st.mods[car.id] : null);
       div.innerHTML = `
+        ${thumb ? `<img class="gthumb" alt="${car.name}" src="${thumb}">` : ''}
         <h3>${car.name}</h3>
         <p>${car.desc}</p>
         ${bar('السرعة', car.vmax / 60)}
@@ -206,6 +232,42 @@ export class UI {
         ${st.selected === spec.id ? '<button class="btn" disabled>العربية الحالية ✓</button>' : `<button class="btn primary" data-act="use" data-id="${spec.id}">اركب العربية</button>`}`;
       list.appendChild(div);
     }
+  }
+
+  // ---------- الورشة ----------
+  renderWorkshop() {
+    const g = this.g;
+    const st = g.state;
+    $('ws-money').textContent = `💰 ${fmtMoney(st.money)} جنيه`;
+    const id = g.wsCar;
+    const car = getCar(id);
+    const mods = st.mods[id] || { slogan: '', accs: [] };
+    const dmg = Math.round(st.damage[id] || 0);
+    const cost = Math.round(dmg * car.repair);
+    let h = '<div class="ws-cars">';
+    for (const cid of g.ownedList()) {
+      const c = getCar(cid);
+      const t = carThumb(c.body, g.carColor(cid), st.mods[cid]);
+      h += `<button class="ws-car${cid === id ? ' sel' : ''}" data-w="car" data-v="${cid}">${t ? `<img src="${t}" alt="">` : ''}<span>${c.name}</span></button>`;
+    }
+    h += '</div>';
+    h += `<h3 class="sec">🔧 التصليح</h3>
+      <div class="item"><div><b>${dmg ? `الضرر ${dmg}%` : 'العربية سليمة'}</b><div class="meta">${dmg ? `التصليح ${cost} جنيه (${car.repair} ج لكل 1%)` : 'مفيش حاجة تتصلح'}</div></div>
+      <button class="btn primary" data-w="repair" ${dmg < 1 ? 'disabled' : ''}>صلّح</button></div>`;
+    h += `<h3 class="sec">✨ التعلية والترويقة</h3>
+      <p class="ws-tag">روق عليها تديك أكتر</p>
+      <div class="meta" style="font-size:12.5px;color:var(--muted)">كل حاجة بتركّبها بتزوّد أجرتك بنسبة. الزيادة الحالية: <b style="color:var(--accent)">+${Math.round(modBonus(mods) * 100)}%</b></div>
+      <div class="ws-accs">`;
+    for (const a of ACCESSORIES) {
+      const on = (mods.accs || []).includes(a.id);
+      h += `<button class="opt${on ? ' sel' : ''}" data-w="acc" data-v="${a.id}"><b>${a.icon} ${a.name}</b><small>${a.desc}</small><span class="otag ${on ? 'green' : 'gold'}">${on ? 'مركّب ✓ (اضغط لفكّه)' : a.price + ' ج · +' + Math.round(a.bonus * 100) + '%'}</span></button>`;
+    }
+    h += '</div>';
+    h += `<h3 class="sec">✍️ كلام على العربية</h3>
+      <div class="meta" style="font-size:12.5px;color:var(--muted)">${mods.slogan ? 'الحالى: «' + mods.slogan + '»' : 'مفيش كلام لسه'} · الكتابة ${SLOGAN_PRICE} جنيه (+3%)</div>
+      <div class="ws-slogans">${SLOGANS.map((t) => `<button class="chip${mods.slogan === t ? ' sel' : ''}" data-w="slogan" data-v="${t.replace(/"/g, '')}">${t}</button>`).join('')}</div>
+      <div class="ws-custom"><input id="w-custom" maxlength="28" placeholder="اكتب كلامك بنفسك..." dir="rtl"><button class="btn" data-w="custom">اكتب</button><button class="btn" data-w="noslogan" ${mods.slogan ? '' : 'disabled'}>امسح</button></div>`;
+    $('workshop-body').innerHTML = h;
   }
 
   // ---------- الحساب ----------
@@ -255,29 +317,69 @@ export class UI {
         .join('') || (offers.length ? '' : '<div class="meta">مفيش عروض شغل.</div>');
   }
 
-  // ---------- الطرق ----------
-  renderRoads() {
-    const st = this.g.state;
+  // ---------- تجهيز الوردية ----------
+  renderSetup() {
+    const g = this.g;
+    const st = g.state;
     $('roads-money').textContent = `💰 ${fmtMoney(st.money)} جنيه`;
-    const list = $('road-list');
-    list.innerHTML = '';
-    for (const r of ROADS) {
-      const d = document.createElement('div');
-      d.className = 'road ' + (r.tagClass || '') + (st.selectedRoad === r.id ? ' sel' : '');
-      const stops = r.landmarks.slice(0, 6).map((l) => l.name).join(' · ') + (r.landmarks.length > 6 ? ' …' : '');
-      d.innerHTML = `
-        <div class="road-main">
-          <h3>${r.name} ${st.roadsPlayed[r.id] ? '<span class="chk">✓</span>' : ''}</h3>
-          <div class="meta">${r.sub}</div>
-          <div class="meta stops">${stops}</div>
-        </div>
-        <div class="road-side">
-          <div class="fare"><b>${r.fare}</b><small>جنيه / فرد</small></div>
-          <div class="rtag ${r.tagClass || ''}">${r.tagIcon} ${r.tag}</div>
-          <button class="btn primary" data-road="${r.id}">اشتغل هنا</button>
-        </div>`;
-      list.appendChild(d);
+    const card = (a, v, sel, title, desc, tag, extra = '', dis = false, img = '') =>
+      `<button class="opt${sel ? ' sel' : ''}${dis ? ' dis' : ''}" data-a="${a}" data-v="${v}" ${dis ? 'aria-disabled="true"' : ''}>${img ? `<img class="othumb" src="${img}" alt="">` : ''}<b>${title}</b>${desc ? `<small>${desc}</small>` : ''}${tag ? `<span class="otag ${extra}">${tag}</span>` : ''}</button>`;
+    let h = '';
+    const rentSel = st.selected === 'boss_taxi';
+    const ownSel = g.isOwnCarSelected();
+    // 1. العربية
+    h += '<h3 class="sec">1. هتشتغل على إيه؟</h3><div class="opts">';
+    h += card('car', 'boss_taxi', rentSel, '🧑‍💼 عربية معلم', 'هتأجّر عربية من معلم', 'إيجار أو نسبة', 'gold');
+    for (const id of st.owned) {
+      const c = getCar(id);
+      if (c.rented) continue;
+      h += card('car', id, st.selected === id, `🚗 ${c.name}`, 'بتاعتك', `سعة ${c.cap}`, 'green', false, carThumb(c.body, g.carColor(id), st.mods[id]));
     }
+    for (const j of g.cloud.workerJobs.filter((j) => j.status === 'active')) {
+      const spec = g.carSpec('job:' + j.id);
+      if (spec) h += card('car', spec.id, st.selected === spec.id, `🤝 ${spec.name}`, `بتدفع ${j.share}% لصاحبك`, `سعة ${spec.cap}`, 'green');
+    }
+    h += '</div>';
+    if (rentSel) {
+      const boss = getBoss(st.work.boss);
+      h += '<h3 class="sec">2. المعلم</h3><div class="opts">';
+      for (const b of BOSSES) {
+        const terms = b.fee ? `يومية ${b.fee} ج` : `نسبة ${b.pct}%`;
+        h += card('boss', b.id, b.id === boss.id, b.name, b.quote, terms, 'green');
+      }
+      h += '</div>';
+      h += '<h3 class="sec">3. نوع المركبة</h3><div class="opts">';
+      for (const vid of boss.vehicles) {
+        const v = getRentVehicle(vid);
+        const fee = boss.fee ? Math.round((boss.fee * v.feeMul) / 5) * 5 : 0;
+        h += card('veh', vid, st.work.vehicle === vid, v.name, v.note, fee ? `يومية ${fee} ج` : `نسبة ${boss.pct}%`, 'green', false, carThumb(v.body, 0xf2b21b));
+      }
+      h += '</div>';
+    } else if (ownSel) {
+      const spec = g.carSpec(st.selected);
+      h += '<h3 class="sec">2. نوع الشغل</h3><div class="opts">';
+      h += card('mode', 'shift', st.work.mode !== 'free', '⏱ وردية', 'وردية 6 دقايق على طريق من اختيارك', '');
+      h += card('mode', 'free', st.work.mode === 'free', '🛣️ شغل حر (خطافى)', 'وصّل 3 أفراد لمسافات بعيدة بأجرة كبيرة. من غير وقت.', spec.cap >= 3 ? 'العجمى 120 · الساحل 500 · العاصمة 550 · مطروح 600' : 'محتاج سعة 3', 'gold', spec.cap < 3);
+      h += '</div>';
+    }
+    // الطريق
+    if (!g.free) {
+      const n = rentSel ? 4 : ownSel ? 3 : 2;
+      h += `<h3 class="sec">${n}. الطريق</h3><div class="opts roads">`;
+      for (const r of ROADS) {
+        const stops = r.landmarks.slice(0, 5).map((l) => l.name).join(' · ') + (r.landmarks.length > 5 ? ' …' : '');
+        h += `<button class="opt road ${r.tagClass || ''}${st.selectedRoad === r.id ? ' sel' : ''}" data-a="road" data-v="${r.id}">
+          <b>${r.name} ${st.roadsPlayed[r.id] ? '<span class="chk">✓</span>' : ''}</b>
+          <small>${r.sub}</small><small class="stops">${stops}</small>
+          <span class="fare"><b>${r.fare}</b><small>جنيه / فرد</small></span>
+          <span class="rtag ${r.tagClass || ''}">${r.tagIcon} ${r.tag}</span></button>`;
+      }
+      h += '</div>';
+    }
+    $('setup-body').innerHTML = h;
+    const spec = g.carSpec(st.selected) || getCar('boss_taxi');
+    const terms = g.free ? 'شغل حر' : g.road.name;
+    $('setup-go').textContent = `ابدأ · ${spec.name} · ${terms}`;
   }
 
   // ---------- الدعوات ----------
@@ -400,7 +502,7 @@ export class UI {
   }
 
   setTimer(sec, over) {
-    const label = over ? 'آخر مشوار' : fmtTime(sec);
+    const label = over ? 'آخر مشوار' : sec === Infinity ? 'شغل حر' : fmtTime(sec);
     this._set('timer', label, (v) => ($('hud-timer').innerHTML = `⏱ <b>${v}</b>`));
     $('hud-timer').classList.toggle('warn', !over && sec <= 30);
   }
