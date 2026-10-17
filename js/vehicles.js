@@ -27,6 +27,7 @@ export const SIZES = {
   gwagon: { w: 1.95, l: 4.7 },
   bus: { w: 2.55, l: 11.2 },
   moto: { w: 0.85, l: 2.1 },
+  ambulance: { w: 2.0, l: 6.0 },
 };
 
 // ---------- عجل ----------

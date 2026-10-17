@@ -187,7 +187,7 @@ export const ACCESSORIES = [
   { id: 'bar', name: 'لمبات السقف', icon: '🚨', price: 600, bonus: 0.03, desc: 'شريط لمبات فوق الكابينة' },
   { id: 'spoiler', name: 'جناح خلفى', icon: '🏁', price: 700, bonus: 0.03, desc: 'سبويلر على الشنطة (مش للتوك توك والنقل)' },
   { id: 'seats', name: 'فرش ونجف وبرفان', icon: '🛋️', price: 400, bonus: 0.04, desc: 'جوه العربية متروق، الراكب بيدّى أكتر' },
-  { id: 'bead', name: 'خرزة زرقا ومصحف', icon: '🧿', price: 150, bonus: 0.02, desc: 'ضد الحسد.. وبركة' },
+  { id: 'bead', name: 'خرزة زرقا ومصحف', icon: '🧿', img: 'assets/images/ui/evil-eye.webp', price: 150, bonus: 0.02, desc: 'ضد الحسد.. وبركة' },
 ];
 export const SLOGAN_BONUS = 0.03;
 export const getAcc = (id) => ACCESSORIES.find((a) => a.id === id);

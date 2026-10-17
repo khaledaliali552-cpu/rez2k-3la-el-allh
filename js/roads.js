@@ -16,7 +16,7 @@ export const ROADS = [
     env: { right: 'sea', left: 'towers', ground: 0x77786f, median: 'palms', trees: 'palm', overpass: false, billboards: false },
     traffic: {
       density: 0.85, speed: 1.0,
-      mix: { gwagon: 1, luxury: 3, suv: 3.5, sedan: 4, taxi: 2, hatch: 1, microbus: 0.6, tonaya: 0.1, tuktuk: 0, pickup: 0.2, boxtruck: 0.1, truck: 0 },
+      mix: { ambulance: 0.15, gwagon: 1, luxury: 3, suv: 3.5, sedan: 4, taxi: 2, hatch: 1, microbus: 0.6, tonaya: 0.1, tuktuk: 0, pickup: 0.2, boxtruck: 0.1, truck: 0 },
     },
     pax: { tourist: 3, doctor: 2, chef: 2, employee: 2, joker: 1.5, granny: 0.5, student: 0.5, worker: 0 },
     landmarks: [
@@ -38,7 +38,7 @@ export const ROADS = [
     env: { right: 'buildings', left: 'old', ground: 0x7a7a72, median: 'concrete', trees: 'tree', overpass: true, billboards: true },
     traffic: {
       density: 1.0, speed: 0.9,
-      mix: { lada: 1.5, moto: 0.8, bus: 0.4, tuktuk2: 0.3, sedan: 3.5, taxi: 3.5, hatch: 2, microbus: 3, tonaya: 1, tuktuk: 1.2, suv: 0.6, luxury: 0.2, pickup: 0.8, boxtruck: 0.6, truck: 0.3 },
+      mix: { ambulance: 0.15, lada: 1.5, moto: 0.8, bus: 0.4, tuktuk2: 0.3, sedan: 3.5, taxi: 3.5, hatch: 2, microbus: 3, tonaya: 1, tuktuk: 1.2, suv: 0.6, luxury: 0.2, pickup: 0.8, boxtruck: 0.6, truck: 0.3 },
     },
     pax: { employee: 3, student: 3, granny: 1.5, doctor: 1.5, worker: 1.5, joker: 2, chef: 0.7, tourist: 0.3 },
     landmarks: [

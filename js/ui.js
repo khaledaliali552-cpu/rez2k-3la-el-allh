@@ -1,6 +1,17 @@
 // الواجهة: شاشات وقوايم وHUD (DOM بس، من غير منطق لعب)
 import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, WELCOME_BONUS, BOSSES, SLOGANS, SLOGAN_PRICE, ACCESSORIES, modBonus, fmtMoney, fmtTime, getCar, getBoss, getRentVehicle } from './data.js';
-import { carThumb } from './thumbs.js';
+import { carThumb as thumb3d } from './thumbs.js';
+import { realisticCarImage, setCarImageListener } from './car-images.js';
+
+// صورة الكارت: الصورة الواقعية لو موجودة (وبدون كماليات)، وإلا الصورة المتولدة من المجسم
+function carThumb(kind, colorHex, mods, colorId) {
+  const hasMods = mods && ((mods.accs && mods.accs.length) || mods.slogan);
+  if (!hasMods) {
+    const real = realisticCarImage(kind, colorId);
+    if (real) return real;
+  }
+  return thumb3d(kind, colorHex, mods);
+}
 import { ROADS } from './roads.js';
 import { errText } from './cloud.js';
 
@@ -13,6 +24,16 @@ export class UI {
     this.g = game;
     this.cache = {};
     this._bind();
+    let t = null;
+    setCarImageListener(() => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const vis = (n) => !$('screen-' + n).classList.contains('hidden');
+        if (vis('garage')) this.renderGarage();
+        else if (vis('workshop')) this.renderWorkshop();
+        else if (vis('roads')) this.renderSetup();
+      }, 60);
+    });
   }
 
   _bind() {
@@ -208,7 +229,7 @@ export class UI {
           }).join('') +
           '</div><div class="meta" style="font-size:11px;color:var(--muted)">الألوان المقفولة بتتشترى بالفلوس (السعر مكتوب عليها)</div>';
       }
-      const thumb = carThumb(car.body, g.carColor(car.id), owned ? st.mods[car.id] : null);
+      const thumb = carThumb(car.body, g.carColor(car.id), owned ? st.mods[car.id] : null, owned ? st.colors[car.id] || 'white' : 'white');
       div.innerHTML = `
         ${thumb ? `<img class="gthumb" alt="${car.name}" src="${thumb}">` : ''}
         <h3>${car.name}</h3>
@@ -247,7 +268,7 @@ export class UI {
     let h = '<div class="ws-cars">';
     for (const cid of g.ownedList()) {
       const c = getCar(cid);
-      const t = carThumb(c.body, g.carColor(cid), st.mods[cid]);
+      const t = carThumb(c.body, g.carColor(cid), st.mods[cid], st.colors[cid] || 'white');
       h += `<button class="ws-car${cid === id ? ' sel' : ''}" data-w="car" data-v="${cid}">${t ? `<img src="${t}" alt="">` : ''}<span>${c.name}</span></button>`;
     }
     h += '</div>';
@@ -260,7 +281,7 @@ export class UI {
       <div class="ws-accs">`;
     for (const a of ACCESSORIES) {
       const on = (mods.accs || []).includes(a.id);
-      h += `<button class="opt${on ? ' sel' : ''}" data-w="acc" data-v="${a.id}"><b>${a.icon} ${a.name}</b><small>${a.desc}</small><span class="otag ${on ? 'green' : 'gold'}">${on ? 'مركّب ✓ (اضغط لفكّه)' : a.price + ' ج · +' + Math.round(a.bonus * 100) + '%'}</span></button>`;
+      h += `<button class="opt${on ? ' sel' : ''}" data-w="acc" data-v="${a.id}"><b>${a.img ? `<img src="${a.img}" alt="" style="height:20px;vertical-align:middle"> ` : a.icon + ' '}${a.name}</b><small>${a.desc}</small><span class="otag ${on ? 'green' : 'gold'}">${on ? 'مركّب ✓ (اضغط لفكّه)' : a.price + ' ج · +' + Math.round(a.bonus * 100) + '%'}</span></button>`;
     }
     h += '</div>';
     h += `<h3 class="sec">✍️ كلام على العربية</h3>
@@ -333,7 +354,7 @@ export class UI {
     for (const id of st.owned) {
       const c = getCar(id);
       if (c.rented) continue;
-      h += card('car', id, st.selected === id, `🚗 ${c.name}`, 'بتاعتك', `سعة ${c.cap}`, 'green', false, carThumb(c.body, g.carColor(id), st.mods[id]));
+      h += card('car', id, st.selected === id, `🚗 ${c.name}`, 'بتاعتك', `سعة ${c.cap}`, 'green', false, carThumb(c.body, g.carColor(id), st.mods[id], st.colors[id] || 'white'));
     }
     for (const j of g.cloud.workerJobs.filter((j) => j.status === 'active')) {
       const spec = g.carSpec('job:' + j.id);
@@ -352,7 +373,7 @@ export class UI {
       for (const vid of boss.vehicles) {
         const v = getRentVehicle(vid);
         const fee = boss.fee ? Math.round((boss.fee * v.feeMul) / 5) * 5 : 0;
-        h += card('veh', vid, st.work.vehicle === vid, v.name, v.note, fee ? `يومية ${fee} ج` : `نسبة ${boss.pct}%`, 'green', false, carThumb(v.body, 0xf2b21b));
+        h += card('veh', vid, st.work.vehicle === vid, v.name, v.note, fee ? `يومية ${fee} ج` : `نسبة ${boss.pct}%`, 'green', false, carThumb(v.body, 0xf2b21b, null, 'yellow'));
       }
       h += '</div>';
     } else if (ownSel) {

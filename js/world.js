@@ -1,6 +1,7 @@
 // العالم: طريق طويل بيتبنى على حتت (chunks) وبيتمسح وراك — وكل طريق له بيئته
 import * as THREE from '../vendor/three.module.min.js';
 import { mergeParts } from './geo.js';
+import { setSpriteLight } from './sprites.js';
 import { getRoad, landmarkS, landmarkAt, landmarkAfter, radarS, radarLimit, nextRadarIndex } from './roads.js';
 
 // ---------- هندسة الطريق ----------
@@ -521,6 +522,7 @@ export class World {
     this.hemi.color.set(t.hemiSky);
     this.hemi.groundColor.set(t.hemiGround);
     this.hemi.intensity = t.hemiI;
+    setSpriteLight(1 - 0.55 * t.windows);
     this.sun.color.set(t.sun);
     this.sun.intensity = t.sunI;
     this.sun.position.set(...t.sunPos);

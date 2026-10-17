@@ -1,7 +1,8 @@
 // الزحمة: عربيات فى نفس اتجاهك (بتتصادم) وعربيات عكسية (للمنظر بس)
 import * as THREE from '../vendor/three.module.min.js';
-import { buildVehicle } from './vehicles.js';
+import { buildVehicle, SIZES } from './vehicles.js';
 import { models } from './models.js';
+import { hasSprite, buildSprite } from './sprites.js';
 import { LANE_X, ONC_X, place, headingYaw, dcx, trafficDensity } from './world.js';
 import { rand, pick, clamp, pickWeighted } from './data.js';
 
@@ -20,15 +21,22 @@ const VEH = {
   lada: { v: [14, 24], colors: [0x1f3a6e, 0x1f3a6e, W, 0x8d1f1f, 0x2f8f5b, 0xb7bcc4] },
   gwagon: { v: [20, 30], colors: [0x1b1d22, 0x1b1d22, 0x24262b] },
   bus: { v: [11, 17], colors: [0xc4302b, 0xc4302b], accents: [0x2f6fd0], slow: true },
+  ambulance: { v: [22, 32], colors: [0xffffff] },
   moto: { v: [14, 24], colors: [0xc4302b, 0x24262b, 0x2a5bd7], cut: true },
   tuktuk2: { v: [6, 10], colors: [0x1f2f6e, 0x1f2f6e], slow: true },
   truck: { v: [10, 15], colors: [0xc4302b, 0xc4302b, 0x2a5bd7, 0x2f8f5b], accents: [0x2a5bd7, 0xc4302b, 0x9c4a2a, 0x5c6b7a], slow: true },
 };
 const DEFAULT_MIX = { sedan: 4, taxi: 4, hatch: 2, microbus: 3, tuktuk: 1, truck: 1 };
 
+// صور المرور (لو متاحة للنوع ده)، وإلا المجسم 3D
+function trafficModel(k, facing) {
+  if (hasSprite(k.kind, facing)) return buildSprite(k.kind, facing, SIZES[k.kind] || SIZES.sedan);
+  return buildVehicle(k.kind, pick(k.colors), k.accents ? { accent: pick(k.accents) } : {});
+}
+
 function pickKind(mix, noSlow = false) {
   const m = {};
-  for (const [k, w] of Object.entries(mix)) if (VEH[k] && (!noSlow || k !== 'tuktuk')) m[k] = w;
+  for (const [k, w] of Object.entries(mix)) if (VEH[k] && (!noSlow || (k !== 'tuktuk' && k !== 'ambulance'))) m[k] = w;
   const kind = pickWeighted(m);
   models.ensure(kind); // تحميل كسول لنموذج GLB لو موجود (مرة واحدة)
   return { kind, ...VEH[kind] };
@@ -66,7 +74,7 @@ export class Traffic {
 
   _spawnDecor(playerS, initial = false) {
     const k = pickKind(this.mix, true);
-    const model = buildVehicle(k.kind, pick(k.colors), k.accents ? { accent: pick(k.accents) } : {});
+    const model = trafficModel(k, 'front');
     this.scene.add(model.group);
     const d = {
       model,
@@ -93,7 +101,7 @@ export class Traffic {
     const useLane = k.slow ? Math.max(2, lane) : lane;
     const x = LANE_X[useLane];
     if (!this._free(s, x, null, 22)) return null;
-    const model = buildVehicle(k.kind, pick(k.colors), k.accents ? { accent: pick(k.accents) } : {});
+    const model = trafficModel(k, 'rear');
     this.scene.add(model.group);
     const cruise = rand(k.v[0], k.v[1]) * this.speed;
     const c = {
