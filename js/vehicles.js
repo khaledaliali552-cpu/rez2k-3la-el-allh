@@ -21,6 +21,11 @@ export const SIZES = {
   pickup: { w: 1.9, l: 5.0 },
   truck: { w: 2.5, l: 10.6 },
   tuktuk: { w: 1.45, l: 2.8 },
+  tuktuk2: { w: 1.45, l: 3.1 },
+  lada: { w: 1.72, l: 4.3 },
+  gwagon: { w: 1.95, l: 4.7 },
+  bus: { w: 2.55, l: 11.2 },
+  moto: { w: 0.85, l: 2.1 },
 };
 
 // ---------- عجل ----------
@@ -100,11 +105,32 @@ const RECIPES = {
     p.wheel(0.86, -1.4).wheel(-0.86, -1.4).wheel(0.86, 1.4).wheel(-0.86, 1.4);
     return p;
   },
+  lada(p, c) {
+    // صندوقية قديمة مربعة
+    p.prof([[-2.1, 0.34], [2.08, 0.34], [2.14, 0.6], [2.06, 0.86], [1.25, 0.92], [-1.3, 0.94], [-2.0, 0.9], [-2.14, 0.62]], 1.72, c, 0.03);
+    p.prof([[1.25, 0.9], [0.6, 1.38], [-0.95, 1.4], [-1.45, 0.93]], 1.5, GLASS, 0.02);
+    p.prof([[0.6, 1.4], [-0.95, 1.42], [-0.97, 1.35], [0.57, 1.33]], 1.52, c, 0.02);
+    // دعامات الأبواب وخطوط الأبواب
+    for (const sd of [-1, 1]) {
+      p.box(0.03, 0.5, 0.04, sd * 0.865, 0.68, 0.0, 0x202226);
+      p.box(0.03, 0.5, 0.04, sd * 0.865, 0.68, 0.95, 0x202226);
+      p.box(0.03, 0.5, 0.04, sd * 0.865, 0.68, -0.95, 0x202226);
+    }
+    // صدامات كروم
+    p.box(1.8, 0.1, 0.1, 0, 0.42, -2.18, 0xc7ccd2).box(1.8, 0.1, 0.1, 0, 0.42, 2.18, 0xc7ccd2);
+    p.box(0.9, 0.18, 0.04, 0, 0.66, -2.16, 0x2a2d32);
+    p.mirrors(0.93, 0.98, -0.55);
+    p.lamps(1.7, 0.66, -2.17, 2.17);
+    p.wheel(0.82, -1.3).wheel(-0.82, -1.3).wheel(0.82, 1.3).wheel(-0.82, 1.3);
+    return p;
+  },
   taxi(p, c) {
-    RECIPES.sedan(p, c);
-    for (const s of [-1, 1]) p.box(0.03, 0.14, 3.3, s * 0.925, 0.62, 0.05, 0x16181c);
-    p.box(0.7, 0.16, 0.3, 0, 1.55, 0.2, 0xffffff);
-    p.box(0.7, 0.04, 0.3, 0, 1.64, 0.2, 0x16181c);
+    RECIPES.lada(p, c);
+    // شريط أسود جانبى
+    for (const sd of [-1, 1]) p.box(0.03, 0.14, 3.7, sd * 0.875, 0.55, 0.0, 0x16181c);
+    // لافتة التاكسى فوق
+    p.box(0.8, 0.2, 0.32, 0, 1.5, 0.1, 0xf4c230);
+    p.box(0.82, 0.03, 0.34, 0, 1.6, 0.1, 0x16181c);
     return p;
   },
   hatch(p, c) {
@@ -134,10 +160,10 @@ const RECIPES = {
     p.prof([[1.3, 1.97], [-2.2, 1.97], [-2.2, 1.9], [1.3, 1.9]], 1.74, c, 0.02);
     p.box(1.3, 0.34, 0.06, 0, 0.9, -2.4, DARK);
     p.box(2.0, 0.18, 0.14, 0, 0.55, -2.38, DARK).box(2.0, 0.18, 0.14, 0, 0.55, 2.38, DARK);
-    const spare = new THREE.CylinderGeometry(0.36, 0.36, 0.2, 14);
-    spare.rotateX(Math.PI / 2);
-    p.geo(spare, 0, 1.22, 2.48, 0x15171a);
-    for (const z of [-1.5, 1.5]) for (const s of [-1, 1]) p.box(0.1, 0.1, 1.05, s * 1.02, 0.9, z, DARK);
+    p.box(1.5, 0.07, 0.06, 0, 1.06, 2.4, 0xd02020, true);
+    p.box(1.2, 0.08, 0.06, 0, 0.48, 2.42, 0x8d9299);
+    for (const sd of [-1, 1]) p.box(0.05, 0.05, 3.3, sd * 0.78, 2.02, -0.45, 0x2a2d32);
+    for (const z of [-1.5, 1.5]) for (const sd of [-1, 1]) p.box(0.1, 0.1, 1.05, sd * 1.02, 0.9, z, DARK);
     p.mirrors(1.1, 1.35, -1.2);
     p.lamps(1.96, 0.98, -2.44, 2.44);
     p.wheel(0.96, -1.5, 0.43, 0.3).wheel(-0.96, -1.5, 0.43, 0.3).wheel(0.96, 1.5, 0.43, 0.3).wheel(-0.96, 1.5, 0.43, 0.3);
@@ -159,8 +185,12 @@ const RECIPES = {
     // c = لون الجسم (أبيض غالبا) ، accent = لون الشريط
     p.prof([[-2.65, 0.36], [2.6, 0.36], [2.68, 0.62], [2.55, 1.0], [2.2, 1.35], [1.85, 2.0], [-2.6, 2.05], [-2.7, 1.2], [-2.72, 0.6]], 1.94, c);
     p.prof([[2.22, 1.38], [1.875, 2.0], [1.65, 2.0], [2.0, 1.38]], 1.72, GLASS, 0.02);
-    for (const z of [-1.55, -0.35, 0.85, 2.0]) for (const s of [-1, 1]) p.box(0.04, 0.5, 0.92, s * 0.985, 1.62, z, GLASS);
-    p.box(1.5, 0.5, 0.04, 0, 1.55, 2.78, GLASS);
+    const TINTS = [0x2c3e50, 0x7a2f7a, 0x2f7a4a, 0x2a6aba];
+    [-1.55, -0.35, 0.85, 2.0].forEach((z, i) => { for (const sd of [-1, 1]) p.box(0.04, 0.5, 0.92, sd * 0.985, 1.62, z, i === 0 ? GLASS : TINTS[(i + (sd > 0 ? 1 : 0)) % 4]); });
+    [-0.5, 0, 0.5].forEach((o, i) => p.box(0.5, 0.5, 0.04, o, 1.55, 2.78, [0x8a2a8a, 0x2a8a4a, 0x2a6aba][i]));
+    // سلم خلفى
+    for (const sd of [-1, 1]) p.box(0.04, 1.5, 0.05, sd * 0.78, 1.25, 2.88, 0xaeb4bd);
+    for (let k = 0; k < 6; k++) p.box(1.56, 0.04, 0.05, 0, 0.7 + k * 0.28, 2.88, 0xaeb4bd);
     for (const s of [-1, 1]) {
       p.box(0.04, 0.17, 4.9, s * 0.985, 0.88, 0.05, accent);
       p.box(0.04, 0.07, 4.9, s * 0.985, 0.68, 0.05, accent);
@@ -179,7 +209,13 @@ const RECIPES = {
       p.box(0.04, 0.46, 0.8, s * 0.845, 1.55, -0.78, GLASS);
       p.box(0.03, 1.1, 0.04, s * 0.845, 1.2, 0.2, 0xcfd3d6);
     }
-    p.box(1.66, 0.14, 0.12, 0, 0.5, -2.06, DARK).box(1.66, 0.14, 0.12, 0, 0.5, 2.06, DARK);
+    p.box(1.2, 0.58, 0.05, 0, 1.45, 1.93, GLASS, false, -0.05);
+    for (const sd of [-1, 1]) {
+      p.box(0.03, 0.06, 3.5, sd * 0.84, 0.95, 0.0, 0x2a2d32);
+      p.box(0.03, 0.9, 0.04, sd * 0.84, 1.1, -0.45, 0x8d9299);
+      p.box(0.07, 0.34, 0.06, sd * 0.78, 0.95, 2.06, 0xe9892a, true);
+    }
+    p.box(1.66, 0.14, 0.12, 0, 0.5, -2.06, DARK).box(1.76, 0.18, 0.16, 0, 0.45, 2.1, 0x2a2d32);
     p.lamps(1.66, 0.85, -2.1, 2.1);
     p.wheel(0.76, -1.2, 0.31, 0.2).wheel(-0.76, -1.2, 0.31, 0.2).wheel(0.76, 1.25, 0.31, 0.2).wheel(-0.76, 1.25, 0.31, 0.2);
     return p;
@@ -205,7 +241,9 @@ const RECIPES = {
     p.box(1.86, 0.1, 2.3, 0, 0.88, 1.3, accent);
     for (const s of [-1, 1]) p.box(0.08, 0.5, 2.3, s * 0.92, 1.18, 1.3, accent);
     p.box(1.86, 0.5, 0.08, 0, 1.18, 2.45, accent).box(1.86, 0.55, 0.08, 0, 1.18, 0.15, accent);
-    p.box(1.2, 0.35, 0.8, 0.2, 1.1, 1.5, 0x8a6a44);
+    p.box(1.2, 0.35, 0.8, 0.2, 1.1, 1.0, 0x8a6a44);
+    p.box(1.7, 0.42, 1.3, 0, 1.3, 1.75, 0xd98a3a);
+    for (const z of [1.3, 1.75, 2.2]) p.box(1.74, 0.44, 0.05, 0, 1.3, z, 0x2a2118);
     p.box(1.9, 0.16, 0.12, 0, 0.5, -2.56, DARK);
     p.lamps(1.88, 0.75, -2.56, 2.5);
     p.wheel(0.9, -1.6, 0.38, 0.26).wheel(-0.9, -1.6, 0.38, 0.26).wheel(0.9, 1.5, 0.38, 0.26).wheel(-0.9, 1.5, 0.38, 0.26);
@@ -224,7 +262,11 @@ const RECIPES = {
       const stack = new THREE.CylinderGeometry(0.1, 0.1, 1.6, 8);
       p.geo(stack, s * 1.0, 3.6, -3.1, 0xb8bcc2);
     }
+    p.box(2.55, 1.15, 6.9, 0, 2.15, 1.55, 0xd98a3a);
+    for (const z of [-1.4, 0.2, 1.8, 3.4]) p.box(2.58, 1.18, 0.07, 0, 2.15, z, 0x2a2118);
     p.box(2.4, 0.3, 0.2, 0, 0.9, -5.28, DARK);
+    for (let k = 0; k < 6; k++) p.box(0.32, 0.22, 0.04, -1.0 + k * 0.4, 0.66, 5.35, k % 2 ? 0xf4f4f0 : 0xe8741c);
+    p.box(1.0, 0.34, 0.04, 0, 1.0, 5.3, 0xf4c230);
     p.lamps(2.3, 1.1, -5.3, 5.2);
     p.wheel(1.1, -3.7, 0.55, 0.4).wheel(-1.1, -3.7, 0.55, 0.4);
     for (const z of [2.0, 3.4]) for (const s of [-1, 1]) p.wheel(s * 1.1, z, 0.55, 0.4).wheel(s * 0.8, z, 0.55, 0.4);
@@ -248,9 +290,90 @@ const RECIPES = {
     p.box(1.3, 0.95, 0.07, 0, 1.35, 1.1, canopy);
     p.box(0.9, 0.25, 0.02, 0, 1.4, 1.15, 0xe9a23b);
     p.box(0.5, 0.1, 0.04, 0, 0.7, 1.16, 0xcc1f1f, true);
+    for (let k = 0; k < 4; k++) p.box(0.7, 0.04, 0.02, 0, 0.9 + k * 0.1, 1.2, 0x16181c);
+    [[-0.45, 1.65, 0xf2b21b], [-0.2, 1.55, 0x2a9d8f], [0.15, 1.7, 0xe63946], [0.45, 1.5, 0x3d7bd9], [0.0, 1.45, 0xffffff]].forEach(([x, y, col]) => p.box(0.16, 0.14, 0.02, x, y, 1.15, col));
     p.box(0.1, 0.5, 0.1, 0, 1.35, -0.85, canopy);
     p.box(0.9, 0.06, 0.06, 0, 1.58, -0.85, 0x222222);
     p.wheel(0, -1.0, 0.29, 0.14).wheel(0.62, 0.92, 0.3, 0.16).wheel(-0.62, 0.92, 0.3, 0.16);
+    return p;
+  },
+  tuktuk2(p, c, accent) {
+    // توكتوك معدّل: استبن + صدام + زخارف
+    RECIPES.tuktuk(p, c, accent);
+    const spare = new THREE.CylinderGeometry(0.34, 0.34, 0.16, 14);
+    spare.rotateX(Math.PI / 2);
+    p.geo(spare, 0, 1.0, 1.32, 0x15171a);
+    p.box(1.3, 0.06, 0.06, 0, 0.5, 1.38, 0xc7ccd2);
+    for (const sd of [-1, 1]) p.box(0.05, 0.2, 0.2, sd * 0.62, 0.52, 1.28, 0xc7ccd2);
+    for (let k = 0; k < 5; k++) p.box(0.06, 0.02, 1.9, (k - 2) * 0.28, 1.99, 0.22, 0xe9c46a);
+    return p;
+  },
+  gwagon(p, c) {
+    p.prof([[-2.25, 0.5], [2.25, 0.5], [2.3, 0.85], [2.25, 1.3], [-2.25, 1.3], [-2.3, 0.9]], 1.92, c, 0.03);
+    p.prof([[2.05, 1.28], [2.0, 2.0], [-2.2, 2.0], [-2.25, 1.28]], 1.8, GLASS, 0.02);
+    p.prof([[2.0, 2.02], [-2.2, 2.02], [-2.2, 1.95], [2.0, 1.95]], 1.84, c, 0.02);
+    for (const sd of [-1, 1]) {
+      p.box(0.12, 0.12, 1.0, sd * 1.0, 1.35, -1.55, DARK);
+      p.box(0.12, 0.12, 1.0, sd * 1.0, 1.35, 1.55, DARK);
+      p.box(0.12, 0.06, 3.0, sd * 1.0, 0.45, 0.0, 0xaeb4bd);
+      p.box(0.04, 0.8, 0.04, sd * 0.9, 1.6, 0.7, DARK);
+    }
+    p.box(1.9, 0.18, 0.16, 0, 0.55, -2.36, DARK).box(1.9, 0.18, 0.16, 0, 0.55, 2.36, DARK);
+    const spare = new THREE.CylinderGeometry(0.45, 0.45, 0.22, 16);
+    spare.rotateX(Math.PI / 2);
+    p.geo(spare, 0.0, 1.15, 2.5, 0x1a1c20);
+    const ring = new THREE.CylinderGeometry(0.4, 0.4, 0.24, 16);
+    ring.rotateX(Math.PI / 2);
+    p.geo(ring, 0.0, 1.15, 2.5, 0x8d9299);
+    p.mirrors(1.1, 1.38, -1.7);
+    p.lamps(1.9, 0.95, -2.36, 2.4);
+    p.wheel(0.97, -1.5, 0.45, 0.3).wheel(-0.97, -1.5, 0.45, 0.3).wheel(0.97, 1.5, 0.45, 0.3).wheel(-0.97, 1.5, 0.45, 0.3);
+    return p;
+  },
+  bus(p, c, accent) {
+    // c = لون الجسم (أحمر) ، accent = الجزء الخلفى والسقف (أزرق)
+    p.box(2.55, 1.2, 11.0, 0, 0.95, 0, c);
+    p.box(2.55, 1.5, 11.0, 0, 2.3, 0, c);
+    p.box(2.58, 1.5, 3.0, 0, 2.3, 4.0, accent);
+    p.box(2.58, 1.2, 3.0, 0, 0.95, 4.0, accent);
+    p.box(2.4, 0.12, 10.6, 0, 3.1, 0, accent);
+    p.box(0.9, 0.12, 0.9, 0, 3.2, -1.5, 0xdfe5ea).box(0.9, 0.12, 0.9, 0, 3.2, 2.2, 0xdfe5ea);
+    for (const sd of [-1, 1]) {
+      p.box(0.05, 0.95, 7.6, sd * 1.28, 2.35, -1.2, GLASS);
+      for (let k = 0; k < 6; k++) p.box(0.06, 1.0, 0.07, sd * 1.285, 2.35, -4.4 + k * 1.3 + 1.0, c);
+      for (let k = 0; k < 3; k++) p.box(0.04, 0.9, 0.9, sd * 1.285, 0.95, 2.2 + k * 1.1, 0x9a2a2a);
+    }
+    p.box(2.3, 1.1, 0.05, 0, 2.4, -5.52, GLASS);
+    p.box(2.2, 0.95, 0.05, 0, 2.4, 5.52, GLASS);
+    p.box(2.55, 0.28, 0.18, 0, 0.45, -5.55, DARK).box(2.55, 0.28, 0.18, 0, 0.45, 5.55, DARK);
+    p.box(1.3, 0.14, 0.05, 0, 1.3, 5.52, 0x16181c);
+    p.mirrors(1.38, 2.0, -5.0);
+    p.lamps(2.3, 0.85, -5.56, 5.58);
+    p.wheel(1.1, -3.6, 0.52, 0.34).wheel(-1.1, -3.6, 0.52, 0.34).wheel(1.1, 2.9, 0.52, 0.34).wheel(-1.1, 2.9, 0.52, 0.34).wheel(0.78, 2.9, 0.52, 0.3).wheel(-0.78, 2.9, 0.52, 0.3);
+    return p;
+  },
+  moto(p, c) {
+    // موتوسيكل بسواق
+    p.box(0.22, 0.34, 1.1, 0, 0.62, 0.0, DARK);
+    p.box(0.34, 0.26, 0.55, 0, 0.92, -0.25, c);
+    p.box(0.3, 0.1, 0.7, 0, 0.84, 0.45, 0x16181c);
+    p.box(0.1, 0.5, 0.1, 0, 0.7, -0.7, 0xaeb4bd, false, -0.3);
+    p.box(0.7, 0.05, 0.05, 0, 1.12, -0.78, 0x16181c);
+    p.box(0.16, 0.14, 0.1, 0, 1.0, -0.88, 0xfff2c0, true);
+    p.box(0.24, 0.1, 0.06, 0, 0.82, 0.98, 0xcc1f1f, true);
+    p.box(0.35, 0.05, 0.5, 0, 0.9, 1.0, 0xaeb4bd);
+    p.box(0.12, 0.12, 0.3, 0.2, 0.42, 0.9, 0xaeb4bd);
+    // السواق
+    p.box(0.36, 0.3, 0.26, 0, 0.98, 0.35, 0x2f4f7a);
+    p.box(0.4, 0.55, 0.26, 0, 1.4, 0.15, 0x8a7a68, false, 0.35);
+    const head = new THREE.SphereGeometry(0.17, 10, 8);
+    p.geo(head, 0, 1.82, -0.05, 0x16181c);
+    p.box(0.18, 0.06, 0.05, 0, 1.82, -0.2, 0x2a3c4c);
+    for (const sd of [-1, 1]) {
+      p.box(0.09, 0.09, 0.62, sd * 0.3, 1.25, -0.4, 0x8a7a68, false, 0.2);
+      p.box(0.12, 0.5, 0.14, sd * 0.2, 0.72, 0.25, 0x2f4f7a, false, 0.3);
+    }
+    p.wheel(0, -0.85, 0.33, 0.12).wheel(0, 0.85, 0.33, 0.12);
     return p;
   },
 };
@@ -316,10 +439,33 @@ function getPlateTex() {
   plateTex.colorSpace = THREE.SRGBColorSpace;
   return plateTex;
 }
-const PLATE_Y = { tuktuk: 0.5, tonaya: 0.55, truck: 0.7, boxtruck: 0.7, pickup: 0.65, microbus: 0.62, suv: 0.72, coupe: 0.45 };
+const PLATE_Y = { lada: 0.52, gwagon: 0.62, bus: 0.7, moto: 0.55,  tuktuk: 0.5, tonaya: 0.55, truck: 0.7, boxtruck: 0.7, pickup: 0.65, microbus: 0.62, suv: 0.72, coupe: 0.45 };
 let plateGeo = null;
+let taxiTex = null;
+function addTaxiSign(group) {
+  if (!taxiTex) {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 40;
+    const x = c.getContext('2d');
+    x.fillStyle = '#f4c230'; x.fillRect(0, 0, 128, 40);
+    x.fillStyle = '#16181c'; x.font = 'bold 26px "Segoe UI", Tahoma, Arial, sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle'; x.direction = 'rtl';
+    x.fillText('تاكسى', 64, 22);
+    taxiTex = new THREE.CanvasTexture(c);
+    taxiTex.colorSpace = THREE.SRGBColorSpace;
+  }
+  const m = new THREE.MeshBasicMaterial({ map: taxiTex });
+  const g = new THREE.PlaneGeometry(0.72, 0.18);
+  for (const [z, ry] of [[-0.07, Math.PI], [0.27, 0]]) {
+    const pl = new THREE.Mesh(g, m);
+    pl.position.set(0, 1.5, 0.1 + (z > 0 ? 0.17 : -0.17));
+    pl.rotation.y = ry;
+    group.add(pl);
+  }
+}
 function addPlates(group, kind, size, bb) {
-  if (kind === 'tuktuk') return;
+  if (kind === 'taxi') addTaxiSign(group);
+  if (kind === 'tuktuk' || kind === 'tuktuk2') return;
   plateGeo = plateGeo || new THREE.PlaneGeometry(0.5, 0.25);
   const m = new THREE.MeshBasicMaterial({ map: getPlateTex() });
   const y = PLATE_Y[kind] || 0.5;
@@ -363,9 +509,9 @@ function sloganTex(text, bg) {
 // ارتفاع وعرض مكان الكلام لكل نوع
 const SLOGAN_SPOT = {
   tuktuk: { y: 0.75, len: 1.5 }, tonaya: { y: 0.95, len: 1.9 }, microbus: { y: 0.82, len: 2.6 }, boxtruck: { y: 1.4, len: 3 },
-  pickup: { y: 0.85, len: 2.2 }, truck: { y: 1.4, len: 3.4 }, suv: { y: 0.98, len: 2.4 }, coupe: { y: 0.75, len: 1.9 },
+  pickup: { y: 0.85, len: 2.2 }, lada: { y: 0.7, len: 1.8 }, gwagon: { y: 1.0, len: 2.4 }, bus: { y: 1.0, len: 4 }, tuktuk2: { y: 0.75, len: 1.5 }, moto: { y: 0.6, len: 0.6 }, truck: { y: 1.4, len: 3.4 }, suv: { y: 0.98, len: 2.4 }, coupe: { y: 0.75, len: 1.9 },
 };
-const ROOF_Y = { tuktuk: 1.75, tonaya: 1.7, microbus: 2.15, boxtruck: 2.7, pickup: 1.8, truck: 3.0, suv: 2.0, coupe: 1.28, sedan: 1.47, taxi: 1.47, hatch: 1.5 };
+const ROOF_Y = { lada: 1.42, gwagon: 2.05, bus: 3.2, moto: 1.9, tuktuk2: 1.75, tuktuk: 1.75, tonaya: 1.7, microbus: 2.15, boxtruck: 2.7, pickup: 1.8, truck: 3.0, suv: 2.0, coupe: 1.28, sedan: 1.47, taxi: 1.47, hatch: 1.5 };
 const neonMat = new THREE.MeshBasicMaterial({ color: 0x35e8ff, transparent: true, opacity: 0.85 });
 const darkM = new THREE.MeshLambertMaterial({ color: 0x17191d });
 export const LIFT_Y = 0.16;
@@ -385,7 +531,7 @@ function applyMods(group, kind, size, mods) {
       pl.rotation.y = sgn * Math.PI / 2;
       group.add(pl);
     }
-    if (kind !== 'tuktuk') {
+    if (kind !== 'tuktuk' && kind !== 'tuktuk2' && kind !== 'moto') {
       const g2 = new THREE.PlaneGeometry(Math.min(sp.len, size.w - 0.15), Math.min(sp.len, size.w - 0.15) / 4);
       const pl = new THREE.Mesh(g2, m);
       pl.position.set(0, sp.y + 0.3 + lift, size.l / 2 + 0.05);
@@ -436,6 +582,8 @@ function defaultAccent(kind) {
     case 'pickup': return 0xf1f1ee;
     case 'truck': return 0x2a5bd7;
     case 'tuktuk': return 0x16181c;
+    case 'tuktuk2': return 0x16181c;
+    case 'bus': return 0x2f6fd0;
     default: return 0x16181c;
   }
 }

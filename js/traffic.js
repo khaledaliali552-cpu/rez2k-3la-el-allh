@@ -16,6 +16,11 @@ const VEH = {
   tuktuk: { v: [6, 10], colors: [0xc4302b, 0xc4302b, 0x2f8f5b, 0xe9c46a], slow: true },
   pickup: { v: [13, 21], colors: [W, W, 0xb7bcc4, 0xc4302b], accents: [W, 0x8a6a44, 0x2a5bd7], slow: true },
   boxtruck: { v: [12, 19], colors: [W, 0xc4302b, 0x2a5bd7], accents: [W, W, 0xdcdcd0, 0xc4302b], slow: true },
+  lada: { v: [14, 24], colors: [0x1f3a6e, 0x1f3a6e, W, 0x8d1f1f, 0x2f8f5b, 0xb7bcc4] },
+  gwagon: { v: [20, 30], colors: [0x1b1d22, 0x1b1d22, 0x24262b] },
+  bus: { v: [11, 17], colors: [0xc4302b, 0xc4302b], accents: [0x2f6fd0], slow: true },
+  moto: { v: [14, 24], colors: [0xc4302b, 0x24262b, 0x2a5bd7], cut: true },
+  tuktuk2: { v: [6, 10], colors: [0x1f2f6e, 0x1f2f6e], slow: true },
   truck: { v: [10, 15], colors: [0xc4302b, 0xc4302b, 0x2a5bd7, 0x2f8f5b], accents: [0x2a5bd7, 0xc4302b, 0x9c4a2a, 0x5c6b7a], slow: true },
 };
 const DEFAULT_MIX = { sedan: 4, taxi: 4, hatch: 2, microbus: 3, tuktuk: 1, truck: 1 };

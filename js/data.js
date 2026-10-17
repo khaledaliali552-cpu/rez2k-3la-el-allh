@@ -29,6 +29,16 @@ export const CARS = [
     vmax: 34, accel: 5.2, brake: 15, handling: 0.85, repair: 18, fareMul: 1,
   },
   {
+    id: 'lada', name: 'صندوقية قديمة', body: 'lada', price: 4000, cap: 3,
+    desc: 'عربية مربعة من أيام زمان. رخيصة وبتتصلح بسهولة.',
+    vmax: 33, accel: 5.4, brake: 15, handling: 0.95, repair: 14, fareMul: 1,
+  },
+  {
+    id: 'moto', name: 'موتوسيكل', body: 'moto', price: 3000, cap: 1,
+    desc: 'بتزن بين العربيات! راكب واحد بس، لكن مشاويرك أسرع.',
+    vmax: 40, accel: 9, brake: 20, handling: 1.3, repair: 8, fareMul: 1,
+  },
+  {
     id: 'hatch', name: 'هاتشباك صغيرة', body: 'hatch', price: 6000, cap: 3,
     desc: 'خفيفة وسهلة فى الزحمة، لكن مش سريعة أوى.',
     vmax: 38, accel: 6.2, brake: 16, handling: 1.0, repair: 18, fareMul: 1,
@@ -59,6 +69,11 @@ export const CARS = [
     vmax: 48, accel: 8, brake: 19, handling: 0.9, repair: 40, fareMul: 1,
   },
   {
+    id: 'gwagon', name: 'جيب مربع 4×4', body: 'gwagon', price: 240000, cap: 4,
+    desc: 'جيب أسود مربع بستبن ورا. تقيل وهيبة وغالى.',
+    vmax: 50, accel: 8.5, brake: 19, handling: 0.88, repair: 55, fareMul: 1,
+  },
+  {
     id: 'luxury', name: 'عربية فارهة', body: 'luxury', price: 180000, cap: 4,
     desc: 'آخر حاجة. فخمة، سريعة، وغالية فى التصليح.',
     vmax: 54, accel: 9.5, brake: 21, handling: 1.05, repair: 60, fareMul: 1,
@@ -69,6 +84,7 @@ export const CARS = [
 export const RENT_VEHICLES = [
   { id: 'r_tuktuk', name: 'توك توك', body: 'tuktuk', cap: 3, feeMul: 0.6, vmax: 24, accel: 4.6, brake: 14, handling: 1.2, repair: 10, fareMul: 1, repairOnBoss: true, note: 'صغير ومرن، مناسب لأحياء المحمودية' },
   { id: 'r_tonaya', name: 'تونية', body: 'tonaya', cap: 4, feeMul: 0.8, vmax: 30, accel: 4.8, brake: 14, handling: 0.95, repair: 14, fareMul: 1, note: 'سريعة للأحياء والزنقات' },
+  { id: 'r_tuktuk2', name: 'توكتوك معدّل', body: 'tuktuk2', cap: 3, feeMul: 0.8, vmax: 25, accel: 4.8, brake: 14, handling: 1.15, repair: 12, fareMul: 1, note: 'متزوّق باستبن وصدام' },
   { id: 'r_taxi', name: 'تاكسى', body: 'taxi', cap: 4, feeMul: 1, vmax: 36, accel: 5.4, brake: 15, handling: 0.9, repair: 18, fareMul: 1, note: 'عربية الشغل المضمونة' },
   { id: 'r_microbus', name: 'ميكروباص', body: 'microbus', cap: 6, feeMul: 1.3, vmax: 34, accel: 5.2, brake: 15, handling: 0.78, repair: 28, fareMul: 1, note: 'بتشيل 6 ركاب' },
 ];
