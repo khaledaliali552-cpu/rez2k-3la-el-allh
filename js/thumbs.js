@@ -1,6 +1,7 @@
 // صور مصغرة للعربيات (بتتولد بكاميرا جانبية وتتخزن)
 import * as THREE from '../vendor/three.module.min.js';
 import { buildVehicle } from './vehicles.js';
+import { models } from './models.js';
 
 let r = null, scene = null, cam = null, failed = false;
 const cache = new Map();
@@ -28,7 +29,7 @@ function init() {
 }
 
 export function carThumb(kind, colorHex, mods) {
-  const key = kind + ':' + colorHex + ':' + JSON.stringify(mods || null);
+  const key = (models.has(kind) ? 'g' : 'p') + kind + ':' + colorHex + ':' + JSON.stringify(mods || null);
   if (cache.has(key)) return cache.get(key);
   if (failed) return '';
   if (!r) init();

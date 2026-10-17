@@ -10,6 +10,7 @@ import { Traffic } from './traffic.js';
 import { Rides } from './rides.js';
 import { Input } from './input.js';
 import { Sfx } from './sfx.js';
+import { models } from './models.js';
 import { UI } from './ui.js';
 import * as Save from './save.js';
 import {
@@ -234,6 +235,11 @@ class Game {
 
   setPlayerCar(id) {
     const car = this.carSpec(id) || getCar('boss_taxi');
+    if (!models.has(car.body)) {
+      models.ensure(car.body).then((ok) => {
+        if (ok && this.player.spec && this.player.spec.body === car.body) this.setPlayerCar(id);
+      });
+    }
     this.player.setSpec(car, this.carColor(id), this.state.owned.includes(id) ? this.state.mods[id] : null);
   }
 

@@ -1,5 +1,6 @@
 // مجسمات العربيات المصرية والناس والعلامات (مبنية بالكود، من غير ملفات)
 import * as THREE from '../vendor/three.module.min.js';
+import { models } from './models.js';
 import { mergeParts, profileGeo, unitBox, matrixFor } from './geo.js';
 
 const GLASS = 0x18222d;
@@ -415,8 +416,17 @@ export function buildVehicle(kind, colorHex, opts = {}) {
     }
   }
   const size = SIZES[recipe] || SIZES.sedan;
-  entry.body.computeBoundingBox();
-  addPlates(group, recipe, size, entry.body.boundingBox);
+  const glb = models.has(recipe) ? models.instantiate(recipe, colorHex, size, sep) : null;
+  if (glb) {
+    // نموذج GLB جاهز: يحل محل المجسم المبنى بالكود
+    for (const ch of group.children.slice()) group.remove(ch);
+    group.add(glb.root);
+    wheels.length = 0;
+    wheels.push(...glb.wheels);
+  } else {
+    entry.body.computeBoundingBox();
+    addPlates(group, recipe, size, entry.body.boundingBox);
+  }
   if (opts.mods) applyMods(group, recipe, size, opts.mods);
   return { group, wheels, w: size.w, l: size.l, kind: recipe };
 }

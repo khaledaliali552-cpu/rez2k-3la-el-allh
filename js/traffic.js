@@ -1,6 +1,7 @@
 // الزحمة: عربيات فى نفس اتجاهك (بتتصادم) وعربيات عكسية (للمنظر بس)
 import * as THREE from '../vendor/three.module.min.js';
 import { buildVehicle } from './vehicles.js';
+import { models } from './models.js';
 import { LANE_X, ONC_X, place, headingYaw, dcx, trafficDensity } from './world.js';
 import { rand, pick, clamp, pickWeighted } from './data.js';
 
@@ -29,6 +30,7 @@ function pickKind(mix, noSlow = false) {
   const m = {};
   for (const [k, w] of Object.entries(mix)) if (VEH[k] && (!noSlow || k !== 'tuktuk')) m[k] = w;
   const kind = pickWeighted(m);
+  models.ensure(kind); // تحميل كسول لنموذج GLB لو موجود (مرة واحدة)
   return { kind, ...VEH[kind] };
 }
 
