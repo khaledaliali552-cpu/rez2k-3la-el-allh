@@ -16,8 +16,11 @@ export const CURB_X = 9.0; // مكان وقوف الركاب
 export const CHUNK = 80;
 
 // انحناء الطريق (شكلى بس: كل حاجة بتتحسب بالمسافة s والإزاحة x)
-export const cx = (s) => 38 * Math.sin(s / 650) + 16 * Math.sin(s / 210 + 1.3);
-export const dcx = (s) => (38 / 650) * Math.cos(s / 650) + (16 / 210) * Math.cos(s / 210 + 1.3);
+// معاملات الانحناء (بتتغير مع كل طريق): سعة وطول موجة لكل من موجتين
+let CV = { a: 38, la: 650, b: 16, lb: 210 };
+export function setCurve(c) { CV = { ...CV, ...c }; }
+export const cx = (s) => CV.a * Math.sin(s / CV.la) + CV.b * Math.sin(s / CV.lb + 1.3);
+export const dcx = (s) => (CV.a / CV.la) * Math.cos(s / CV.la) + (CV.b / CV.lb) * Math.cos(s / CV.lb + 1.3);
 
 export function place(obj, s, x, y = 0) {
   obj.position.set(cx(s) + x, y, -s);
@@ -151,6 +154,7 @@ export class World {
 
   setRoad(road) {
     this.road = road;
+    setCurve(road.curve || { a: 38, la: 650, b: 16, lb: 210 });
     this.mGround.color.set(road.env.ground);
     this.reset(this.seed);
   }

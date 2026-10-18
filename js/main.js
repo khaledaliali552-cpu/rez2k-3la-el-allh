@@ -629,7 +629,7 @@ class Game {
     if (st.settings.radio && !this.radio.playing) this.radio.start(st.settings.radioTrack || 0);
     else this.radio.resumeForGame();
     this.ui.setSoundLabel(st.settings.sound);
-    this.ui.toast(this.road.free ? '🛣️ شغل حر: وصّل 3 أفراد لمسافات بعيدة' : `${this.road.tagIcon} ${this.road.name} · ${this.road.fare} جنيه للفرد`, 'gold');
+    this.ui.toast(this.road.free ? '🛣️ شغل حر: وصّل 3 أفراد لمسافات بعيدة' : `${this.road.tagIcon} ${this.road.name} · ${this.road.perKm} جنيه للكيلو`, 'gold');
   }
 
   pause() {
@@ -1019,7 +1019,7 @@ class Game {
       card = {
         icon: c.type.icon,
         title: `${c.name} ← ${c.place}`,
-        sub: `${c.group > 1 ? c.group + ' أفراد · ' : ''}باقى ${Math.max(0, Math.round(ds))} م · ${rem >= 0 ? fmtTime(rem) : 'اتأخرت!'} · ${fmtMoney(c.baseFare)} ج`,
+        sub: `${c.group > 1 ? c.group + ' أفراد · ' : ''}باقى ${Math.max(0, Math.round(ds))} م · ${rem >= 0 ? fmtTime(rem) : 'اتأخرت!'} · 🧮 ${c.km.toFixed(2)} كم = ${fmtMoney(Math.max(20, Math.round(c.baseFare / 5) * 5))} ج`,
         bar: inZone ? r.holdT / 1.2 : rem / c.limit,
         barClass: inZone ? 'gold' : rem / c.limit < 0.25 ? 'warn' : '',
         line: rem >= 0 ? 'سوق بنعومة: البقشيش على قد الراحة والسرعة.' : 'الأجرة بتقل كل ما بتتأخر.',

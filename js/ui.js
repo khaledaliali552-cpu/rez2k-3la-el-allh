@@ -392,7 +392,7 @@ export class UI {
         h += `<button class="opt road ${r.tagClass || ''}${st.selectedRoad === r.id ? ' sel' : ''}" data-a="road" data-v="${r.id}">
           <b>${r.name} ${st.roadsPlayed[r.id] ? '<span class="chk">✓</span>' : ''}</b>
           <small>${r.sub}</small><small class="stops">${stops}</small>
-          <span class="fare"><b>${r.fare}</b><small>جنيه / فرد</small></span>
+          <span class="fare"><b>${r.perKm}</b><small>جنيه / كم / فرد</small></span>
           <span class="rtag ${r.tagClass || ''}">${r.tagIcon} ${r.tag}</span></button>`;
       }
       h += '</div>';
