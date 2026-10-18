@@ -29,6 +29,26 @@ async function realBackend() {
       const c = await authM.signInWithEmailAndPassword(auth, email, pw);
       return { uid: c.user.uid, email: c.user.email, name: c.user.displayName || '' };
     },
+    // دخول بجوجل / فيسبوك / أبل (نافذة منبثقة، ولو الموبايل منعها بنحوّل للصفحة)
+    signInWith: async (name) => {
+      const prov = name === 'google' ? new authM.GoogleAuthProvider()
+        : name === 'facebook' ? new authM.FacebookAuthProvider()
+        : new authM.OAuthProvider('apple.com');
+      if (name === 'apple') { prov.addScope('email'); prov.addScope('name'); }
+      if (name === 'google') prov.setCustomParameters({ prompt: 'select_account' });
+      let c;
+      try {
+        c = await authM.signInWithPopup(auth, prov);
+      } catch (e) {
+        if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) {
+          await authM.signInWithRedirect(auth, prov);
+          return null;
+        }
+        throw e;
+      }
+      const u = c.user;
+      return { uid: u.uid, email: u.email, name: u.displayName || '' };
+    },
     signOut: () => authM.signOut(auth),
     resetPassword: (email) => authM.sendPasswordResetEmail(auth, email),
     get: async (path) => {
@@ -57,6 +77,9 @@ const ERR = {
   'auth/network-request-failed': 'مفيش نت أو الاتصال ضعيف',
   'auth/missing-password': 'اكتب الباسورد',
   'auth/operation-not-allowed': 'تسجيل الإيميل مش مفعّل فى Firebase (Authentication ← Sign-in method)',
+  'auth/popup-closed-by-user': 'قفلت نافذة الدخول قبل ما تخلص',
+  'auth/cancelled-popup-request': 'اتفتحت أكتر من نافذة دخول، جرّب تانى',
+  'auth/account-exists-with-different-credential': 'الإيميل ده متسجل قبل كده بطريقة تانية (إيميل أو مزوّد تانى). ادخل بالطريقة الأولى',
   'auth/unauthorized-domain': 'الدومين ده مش مضاف فى Authorized domains فى Firebase',
   'permission-denied': 'السيرفر رفض العملية (راجع قواعد Firestore)',
 };
@@ -102,6 +125,10 @@ export class Cloud {
     return u;
   }
 
+  signInWith(provider) {
+    return this.b.signInWith(provider);
+  }
+
   signIn(email, pw) {
     return this.b.signIn(email.trim(), pw);
   }
@@ -142,7 +169,7 @@ export class Cloud {
     const u = this.user;
     const prof = await this.b.get('users/' + u.uid);
     const local = g.state;
-    const name = u.name || local.name || u.email.split('@')[0];
+    const name = u.name || local.name || (u.email || 'لاعب').split('@')[0];
     if (prof && prof.save) {
       let cloudState;
       try {
@@ -191,7 +218,7 @@ export class Cloud {
     if (!this.user) return;
     const st = this.g.state;
     await this.b.set('users/' + this.user.uid, {
-      email: this.user.email,
+      email: this.user.email || '',
       name: st.name || '',
       money: Math.round(st.money),
       save: JSON.stringify(st),
@@ -255,7 +282,7 @@ export class Cloud {
     if (c.uid === this.user.uid) throw new Error('ده كودك انت!');
     if (this.ownerJobs.some((j) => j.workerUid === c.uid && j.carId === carId)) throw new Error('صاحبك ده عندك بالفعل على نفس العربية');
     await this.b.add('jobs', {
-      ownerUid: this.user.uid, ownerName: st.name || this.user.email.split('@')[0],
+      ownerUid: this.user.uid, ownerName: st.name || (this.user.email || 'لاعب').split('@')[0],
       workerUid: c.uid, workerName: c.name || '', carId, colorId: st.colors[carId] || 'white',
       share: Math.max(0, Math.min(70, Math.round(share))), status: 'pending', createdAt: Date.now(),
     });

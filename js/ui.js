@@ -40,6 +40,9 @@ export class UI {
       if (!$('acc-name').value.trim()) throw new Error('اكتب اسمك الأول');
       await cl().signUp($('acc-email').value, $('acc-pass').value, $('acc-name').value);
     });
+    document.querySelectorAll('.social-btn').forEach((b) => {
+      b.onclick = () => guard(async () => cl().signInWith(b.dataset.prov));
+    });
     $('acc-reset').onclick = () => guard(async () => {
       if (!$('acc-email').value.trim()) throw new Error('اكتب الإيميل الأول');
       await cl().resetPassword($('acc-email').value);
@@ -297,7 +300,7 @@ export class UI {
     if (c.user && !c.ready) note.textContent = 'بنحمّل بياناتك…';
     if (!on) return;
     const st = this.g.state;
-    $('acc-who').innerHTML = `${st.name || ''}<br><small>${c.user.email}</small><br>كودك: <b class="code" style="font-size:20px">${st.refCode}</b>`;
+    $('acc-who').innerHTML = `${st.name || ''}<br><small>${c.user.email || 'دخول بحساب خارجى'}</small><br>كودك: <b class="code" style="font-size:20px">${st.refCode}</b>`;
     // العربيات اللى يقدر يشغّل عليها
     const sel = $('job-car');
     const owned = st.owned.filter((id) => !getCar(id).rented);
