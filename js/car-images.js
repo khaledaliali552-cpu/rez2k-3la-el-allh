@@ -24,6 +24,13 @@ export const LOOKS = {
     white: { rear: 'byd-rear', card: 'lux-front-white' },
     silver: { rear: 'corolla20-rear', card: 'lux-front-silver' },
   } },
+  pickup: { def: 'blue', looks: { blue: { rear: 'dababa-blue-rear', card: 'dababa-blue-front' }, orange: { rear: 'dababa-orange-rear', card: 'dababa-orange-front' }, green: { rear: 'pickup-green-rear', card: 'pickup-green-front' } } },
+  bus: { def: 'blue', looks: { blue: { rear: 'bus-blue-rear', card: 'bus-blue-front' }, red: { rear: 'bus-red-rear', card: 'bus-red-front' } } },
+  benelli: { def: 'black', looks: { black: { rear: 'moto-benelli-rear', card: 'moto-benelli-front' } } },
+  daiwa: { def: 'yellow', looks: { yellow: { rear: 'moto-daiwa-rear', card: 'moto-daiwa-front' } } },
+  harley: { def: 'green', looks: { green: { rear: 'moto-harley-rear', card: 'moto-harley-front' } } },
+  hojen: { def: 'blue', looks: { blue: { rear: 'moto-hojen-rear', card: 'moto-hojen-front' } } },
+  vespa: { def: 'silver', looks: { silver: { rear: 'vespa-rear', card: 'vespa-front' } } },
   tuktuk: { def: 'red', looks: { red: { rear: 'tuktuk-red-rear', card: 'tuktuk-red-front' } } },
   tuktuk2: { def: 'gold', looks: { gold: { rear: 'tuktuk-gold-rear', card: 'tuktuk-gold-front' } } },
 };

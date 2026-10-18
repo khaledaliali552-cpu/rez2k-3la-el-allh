@@ -7,6 +7,8 @@ import { clamp } from './data.js';
 export const X_MIN = -6.3;
 export const X_MAX = 6.3;
 
+const REV_MAX = 7; // متر/ثانية ≈ 25 كم/س
+
 export class PlayerCar {
   constructor(scene) {
     this.scene = scene;
@@ -57,24 +59,35 @@ export class PlayerCar {
     const brake = input.brake * (settings.brakeSens || 1);
     const vOld = this.v;
 
+    const rev = input.reverse || 0;
     let a = 0;
     if (throttle > 0) {
-      const r = clamp(this.v / this.vmaxEff, 0, 1);
-      a += spec.accel * throttle * (1 - r * r);
+      if (this.v < -0.2) a += spec.brake * throttle;
+      else {
+        const r = clamp(this.v / this.vmaxEff, 0, 1);
+        a += spec.accel * throttle * (1 - r * r);
+      }
+    }
+    if (rev > 0 && this.v < 0.6) {
+      const r = clamp(-this.v / REV_MAX, 0, 1);
+      a -= spec.accel * 0.5 * rev * (1 - r * r);
     }
     if (brake > 0 && this.v > 0.05) a -= spec.brake * clamp(brake, 0, 1.4);
-    a -= 0.35 + 0.0009 * this.v * this.v; // مقاومة هوا واحتكاك
-    this.v = Math.max(0, this.v + a * dt);
+    let vn = this.v + a * dt;
+    const fr = (0.35 + 0.0009 * vn * vn) * dt;
+    vn = Math.abs(vn) <= fr ? 0 : vn - Math.sign(vn) * fr;
+    this.v = Math.max(-REV_MAX, vn);
     if (this.v > this.vmaxEff) this.v = Math.max(this.vmaxEff, this.v - 6 * dt);
     this.accel = (this.v - vOld) / Math.max(dt, 1e-4);
 
     // انحراف جانبى
-    const grip = clamp(this.v / 2.5, 0, 1);
-    const maxLat = 11.5 * spec.handling * grip * (1 - 0.3 * (this.v / spec.vmax));
+    const grip = clamp(Math.abs(this.v) / 2.5, 0, 1);
+    const maxLat = 11.5 * spec.handling * grip * (1 - 0.3 * (Math.abs(this.v) / spec.vmax));
     const target = input.steer * (settings.steer || 1) * maxLat;
     this.vx += (target - this.vx) * Math.min(1, dt * 14);
     this.x += this.vx * dt;
     this.s += this.v * dt;
+    if (this.s < 4) { this.s = 4; if (this.v < 0) this.v = 0; }
 
     // حواف الطريق
     if (this.x > X_MAX || this.x < X_MIN) {
@@ -115,7 +128,7 @@ export class PlayerCar {
   sync(dt) {
     this.vxS += (this.vx - this.vxS) * Math.min(1, (dt || 1) * 6);
     place(this.root, this.s, this.x, 0);
-    this.root.rotation.y = headingYaw(this.s, this.v, this.vxS * 0.9);
+    this.root.rotation.y = headingYaw(this.s, Math.max(this.v, 0), this.vxS * 0.9);
     const pitch = clamp(this.accel * 0.004, -0.06, 0.05);
     this.inner.rotation.x = pitch;
     this.inner.rotation.z = clamp(this.vxS * 0.012, -0.07, 0.07);

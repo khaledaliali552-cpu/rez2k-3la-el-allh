@@ -8,7 +8,7 @@ const DIR = 'assets/images/cars/realistic/';
 // [اسم الملف, العرض بالمتر (بالمرايا), نسبة الطول/العرض]
 const S = {
   sedanRear: [['sedan-rear-cream', 1.95, 0.8071], ['sedan-rear-silver', 1.95, 0.8071], ['sedan-rear-white', 1.95, 0.8071], ['corolla-silver-rear', 2.0, 0.8071], ['corolla-white-rear', 2.0, 0.8071], ['lancer-black-rear', 1.95, 0.7879], ['lancer-silver-rear', 1.95, 0.7879], ['verna-white-rear', 2.0, 0.8053], ['byd-rear', 2.0, 0.7963], ['corolla20-rear', 2.0, 0.8296], ['mg-rear', 2.0, 0.8371]],
-  pickupRear: [['dababa-rear', 2.1, 0.8528], ['flower-blue-rear', 1.95, 1.232], ['flower-red-rear', 1.95, 1.232], ['pickup-green-rear', 2.0, 0.811]],
+  pickupRear: [['dababa-rear', 2.1, 0.8528], ['flower-blue-rear', 1.95, 1.232], ['flower-red-rear', 1.95, 1.232], ['pickup-green-rear', 2.0, 0.811], ['dababa-blue-rear', 2.12, 0.85], ['dababa-orange-rear', 2.12, 0.85]],
   gwagonRear: [['gwagon-rear', 2.15, 0.9297]],
   ladaRear: [['lada-rear', 1.85, 0.81]],
   suvRear: [['suv-rear', 2.05, 0.8186], ['jeep-rear', 2.0, 0.8721]],
@@ -16,24 +16,25 @@ const S = {
   luxRear: [['lancer-black-rear', 1.95, 0.7879], ['byd-rear', 2.0, 0.7963], ['corolla20-rear', 2.0, 0.8296]],
   taxiRear: [['taxi-verna-rear', 2.0, 0.8454], ['lada-taxi-rear', 1.85, 0.9482]],
   hatchRear: [['hatch-yellow-rear', 1.8, 0.8738]],
-  busRear: [['bus-red-rear', 3.0, 0.986]],
+  busRear: [['bus-red-rear', 3.0, 0.986], ['bus-blue-rear', 3.33, 0.9308]],
   vanRear: [['van-hiace-rear', 1.95, 0.902]],
   tonayaRear: [['van-white-rear', 1.75, 0.9725]],
   tuktukRear: [['tuktuk-red-rear', 1.45, 1.1494]],
   tuktuk2Rear: [['tuktuk-gold-rear', 1.45, 1.1128]],
-  moto: [['moto-rear-red', 0.9, 1.6902], ['moto-rear-yellow', 0.9, 1.7769]],
+  moto: [['moto-rear-red', 0.9, 1.6902], ['moto-rear-yellow', 0.9, 1.7769], ['moto-benelli-rear', 1.26, 1.3481], ['moto-daiwa-rear', 1.24, 1.3673], ['moto-harley-rear', 1.34, 1.2673], ['moto-hojen-rear', 1.59, 1.1038], ['vespa-rear', 1.05, 1.6135]],
+  motoFront: [['moto-benelli-front', 1.05, 1.6231], ['moto-daiwa-front', 1.21, 1.4019], ['moto-harley-front', 1.26, 1.3442], ['moto-hojen-front', 1.34, 1.3019], ['vespa-front', 1.04, 1.6288]],
   ambulance: [['ambulance-rear', 2.0, 1.2399]],
   luxFront: [['lux-front-black', 1.95, 0.7464], ['lux-front-blue', 1.95, 0.7464], ['lux-front-beige', 1.95, 0.7464], ['lux-front-silver', 1.95, 0.7464], ['lux-front-white', 1.95, 0.7464]],
   sedanFront: [['bmw-front-black', 1.98, 0.7683], ['bmw-front-blue', 1.98, 0.7683], ['bmw-front-gray', 1.98, 0.7683], ['bmw-front-red', 1.98, 0.7683], ['bmw-front-white', 1.98, 0.7683], ['sedan-front-cream', 1.95, 0.8089], ['sedan-front-silver', 1.95, 0.8089], ['corolla-silver-front', 2.0, 0.8053], ['corolla-white-front', 2.0, 0.8053], ['lancer-black-front', 1.95, 0.7862], ['corolla20-front', 2.0, 0.7639], ['mg-front', 2.0, 0.8097]],
   taxiFront: [['taxi-front', 2.0, 0.812], ['taxi-verna-front', 2.0, 0.8245], ['lada-taxi-front', 1.85, 0.932]],
   coupeFront: [['ferrari-front', 1.95, 0.7622]],
   hatchFront: [['hatch-yellow-front', 1.8, 0.8159]],
-  busFront: [['bus-red-front', 3.0, 0.9882]],
+  busFront: [['bus-red-front', 3.0, 0.9882], ['bus-blue-front', 3.0, 1.0327]],
   vanFront: [['van-hiace-front', 1.95, 0.8513]],
   tonayaFront: [['van-white-front', 1.75, 0.8878]],
   tuktukFront: [['tuktuk-red-front', 1.45, 1.1812]],
   tuktuk2Front: [['tuktuk-gold-front', 1.45, 1.1566]],
-  pickupFront: [['pickup-green-front', 2.0, 0.8118]],
+  pickupFront: [['pickup-green-front', 2.0, 0.8118], ['dababa-blue-front', 1.95, 0.9231], ['dababa-orange-front', 1.95, 0.9231]],
   gwagonFront: [['gwagon-front', 2.15, 0.8776]],
   ladaFront: [['lada-front', 1.85, 0.7988]],
   suvFront: [['suv-front', 2.05, 0.7617], ['jeep-front', 2.0, 0.875]],
@@ -44,7 +45,7 @@ for (const list of Object.values(S)) for (const [n, w, a] of list) IMG[n] = [w, 
 // نوع المرور -> مجموعة الصور (rear = اتجاهك، front = عكسى)
 const MAP = {
   rear: { sedan: 'sedanRear', pickup: 'pickupRear', gwagon: 'gwagonRear', lada: 'ladaRear', suv: 'suvRear', moto: 'moto', ambulance: 'ambulance', coupe: 'coupeRear', luxury: 'luxRear', truck: 'pickupRear', boxtruck: 'pickupRear', taxi: 'taxiRear', hatch: 'hatchRear', bus: 'busRear', microbus: 'vanRear', tonaya: 'tonayaRear', tuktuk: 'tuktukRear', tuktuk2: 'tuktuk2Rear' },
-  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront', hatch: 'hatchFront', bus: 'busFront', microbus: 'vanFront', tonaya: 'tonayaFront', tuktuk: 'tuktukFront', tuktuk2: 'tuktuk2Front', pickup: 'pickupFront', coupe: 'coupeFront', truck: 'pickupFront', boxtruck: 'pickupFront' },
+  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront', hatch: 'hatchFront', bus: 'busFront', microbus: 'vanFront', tonaya: 'tonayaFront', tuktuk: 'tuktukFront', tuktuk2: 'tuktuk2Front', pickup: 'pickupFront', moto: 'motoFront', coupe: 'coupeFront', truck: 'pickupFront', boxtruck: 'pickupFront' },
 };
 
 const loader = new THREE.TextureLoader();
@@ -136,6 +137,7 @@ function stickerMaterial(id) {
 export const STICKER_SPOT = {
   sedan: [0.64, 0.62], taxi: [0.64, 0.6], hatch: [0.62, 0.62], coupe: [0.58, 0.5], suv: [0.64, 0.6], luxury: [0.64, 0.6],
   microbus: [0.62, 0.7], tonaya: [0.6, 0.7], lada: [0.62, 0.6], gwagon: [0.64, 0.6], tuktuk: [0.52, 0.6], tuktuk2: [0.5, 0.6], moto: [0.5, 0.5],
+  pickup: [0.7, 0.55], bus: [0.55, 0.6], benelli: [0.4, 0.4], daiwa: [0.4, 0.4], harley: [0.4, 0.4], hojen: [0.4, 0.4], vespa: [0.4, 0.4],
 };
 let neonMat = null, barTex = null;
 export function setSpriteLightPlayer() {}

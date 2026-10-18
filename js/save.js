@@ -28,7 +28,7 @@ export const defaults = () => ({
   stats: { rides: 0, people: 0, perfect: 0, km: 0, earned: 0, tips: 0, fines: 0, crashes: 0, bestTip: 0, shifts: 0 },
   ach: {},
   quests: { day: 0, ids: [] },
-  settings: { sound: true, vibrate: true, auto: false, steer: 1, brakeSens: 1, radio: true, radioVol: 0.6, radioTrack: 0 },
+  settings: { control: 'arrows', sound: true, vibrate: true, auto: false, steer: 1, brakeSens: 1, radio: true, radioVol: 0.6, radioTrack: 0 },
   tutorialDone: false,
 });
 

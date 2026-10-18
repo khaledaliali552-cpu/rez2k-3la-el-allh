@@ -41,14 +41,22 @@
 
   <!-- ========== أزرار اللمس ========== -->
   <div id="touch" class="hidden">
+    <div class="t-left" id="t-arrows">
+      <button id="t-left" class="tbtn arrow" aria-label="يسار">◀</button>
+      <button id="t-right" class="tbtn arrow" aria-label="يمين">▶</button>
+    </div>
     <div class="wheel" id="wheel" aria-label="عجلة القيادة">
       <div class="wheel-face" id="wheel-face">
         <i class="w-hub"></i><i class="w-spoke s1"></i><i class="w-spoke s2"></i><i class="w-mark"></i>
       </div>
     </div>
+    <div class="stick" id="stick" aria-label="دايرة التحكم">
+      <span class="st-up">▲ بنزين</span><span class="st-dn">▼ رجوع</span><span class="st-l">◀</span><span class="st-r">▶</span>
+      <i class="stick-knob" id="stick-knob"></i>
+    </div>
     <div class="t-right">
       <button id="t-horn" class="tbtn small" aria-label="كلاكس">📣</button>
-      <button id="t-brake" class="tbtn brake" aria-label="فرامل">فرامل</button>
+      <button id="t-brake" class="tbtn brake" aria-label="فرامل ورجوع">فرامل<br>ورجوع</button>
       <button id="t-gas" class="tbtn gas" aria-label="بنزين">بنزين</button>
     </div>
   </div>
@@ -77,27 +85,34 @@
   </section>
 
   <!-- ========== الجراج ========== -->
-  <section id="screen-garage" class="screen hidden">
-    <div class="panel wide">
-      <div class="panel-head">
-        <h2>الجراج</h2>
-        <div class="pill" id="garage-money"></div>
+  <section id="screen-garage" class="screen full hidden">
+    <div class="stage" style="--ar:1.8329"><img class="stage-bg" src="assets/images/bg/garage.webp" alt=""><div class="stage-car" id="g-car" style="--cw:25%;--cb:14%"></div></div>
+    <div class="topbar">
+      <button class="btn round" id="g-back" aria-label="رجوع">➜</button>
+      <div class="tabs" id="g-tabs">
+        <button data-tab="private">🚗 ملاكى</button><button data-tab="hire">🚕 أجرة</button><button data-tab="bike">🏍️ مكن</button>
       </div>
-      <div id="garage-list" class="garage-list"></div>
-      <div class="row"><button class="btn" id="g-workshop">🔧 الورشة</button><button class="btn" id="g-back">رجوع</button></div>
+      <div class="pill" id="garage-money"></div>
+      <button class="btn round" id="g-workshop" aria-label="الورشة">🔧</button>
+    </div>
+    <div class="sheet" id="garage-sheet">
+      <div id="g-info" class="g-info"></div>
+      <div id="garage-list" class="g-strip"></div>
     </div>
   </section>
 
   <!-- ========== الورشة ========== -->
-  <section id="screen-workshop" class="screen hidden">
-    <div id="ws-room" aria-hidden="true"></div>
-    <div class="panel wide">
-      <div class="panel-head">
-        <h2>🔧 الورشة</h2>
-        <div class="pill" id="ws-money"></div>
+  <section id="screen-workshop" class="screen full hidden">
+    <div class="stage" style="--ar:1.3274"><img class="stage-bg" src="assets/images/bg/workshop.webp" alt=""><div class="stage-car" id="ws-room" style="--cw:30%;--cb:7%"></div></div>
+    <div class="topbar">
+      <button class="btn round" id="w-back" aria-label="رجوع">➜</button>
+      <div class="tabs" id="ws-tabs">
+        <button data-wt="fix">🔧 التصليح</button><button data-wt="acc">✨ الكماليات</button><button data-wt="stk">✍️ استيكر</button>
       </div>
+      <div class="pill" id="ws-money"></div>
+    </div>
+    <div class="sheet">
       <div id="workshop-body" class="ws-body"></div>
-      <button class="btn" id="w-back">رجوع</button>
     </div>
   </section>
 
@@ -119,6 +134,12 @@
       <label class="set"><span>الصوت</span><input type="checkbox" id="s-sound"></label>
       <label class="set"><span>الاهتزاز عند الخبط</span><input type="checkbox" id="s-vibrate"></label>
       <label class="set"><span>بنزين أوتوماتيك (بدون ما تدوس)</span><input type="checkbox" id="s-auto"></label>
+      <div class="set ctl"><span>طريقة التحكم (موبايل)</span>
+        <div class="ctl-opts" id="s-ctl">
+          <button data-ctl="arrows">⬅️➡️ بنزين وفرامل وأسهم</button>
+          <button data-ctl="wheel">🛞 بنزين وفرامل ودايرة</button>
+          <button data-ctl="stick">⭕ دايرة واحدة (فوق بنزين، تحت رجوع)</button>
+        </div></div>
       <label class="set"><span>حساسية الدريكسيون</span><input type="range" id="s-steer" min="0.6" max="1.5" step="0.05"></label>
       <label class="set"><span>قوة الفرامل</span><input type="range" id="s-brake" min="0.6" max="1.4" step="0.05"></label>
       <button class="btn danger" id="s-reset">مسح التقدم والبدء من الأول</button>

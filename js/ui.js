@@ -1,7 +1,7 @@
 // الواجهة: شاشات وقوايم وHUD (DOM بس، من غير منطق لعب)
 import { CARS, COLORS, QUEST_POOL, ACHIEVEMENTS, WELCOME_BONUS, BOSSES, STICKERS, SLOGAN_PRICE, ACCESSORIES, modBonus, fmtMoney, fmtTime, getCar, getBoss, getRentVehicle } from './data.js';
 import { cardImage, lookIds, defaultLook } from './car-images.js';
-import { workshopRoom } from './workshop-bg.js';
+import { carHtml } from './workshop-bg.js';
 
 // صورة كارت العربية (كلها صور، من غير مجسمات)
 function carThumb(body, look) {
@@ -138,6 +138,7 @@ export class UI {
     $('su-garage').onclick = () => g.openGarage();
     $('su-menu').onclick = () => g.backToMenu();
 
+    $('s-ctl').addEventListener('click', (e) => { const b = e.target.closest('[data-ctl]'); if (b) g.setSetting('control', b.dataset.ctl); });
     $('s-sound').onchange = (e) => g.setSetting('sound', e.target.checked);
     $('s-vibrate').onchange = (e) => g.setSetting('vibrate', e.target.checked);
     $('s-auto').onchange = (e) => g.setSetting('auto', e.target.checked);
@@ -146,7 +147,9 @@ export class UI {
     $('s-reset').onclick = () => g.resetProgress();
 
     // قائمة الجراج (تفويض أحداث)
-    $('garage-list').addEventListener('click', (e) => {
+    $('g-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) g.setGarageTab(b.dataset.tab); });
+    $('ws-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-wt]'); if (b) { g.wsTab = b.dataset.wt; this.renderWorkshop(); } });
+    $('garage-sheet').addEventListener('click', (e) => {
       const sw = e.target.closest('[data-color]');
       if (sw) return g.buyColor(sw.dataset.car, sw.dataset.color);
       const btn = e.target.closest('[data-act]');
@@ -155,7 +158,7 @@ export class UI {
         else if (btn.dataset.act === 'use') g.selectCar(btn.dataset.id);
         return;
       }
-      const card = e.target.closest('.gcar');
+      const card = e.target.closest('.gitem');
       if (card) g.previewCar(card.dataset.id);
     });
   }
@@ -187,59 +190,49 @@ export class UI {
     const g = this.g;
     const st = g.state;
     $('garage-money').textContent = `💰 ${fmtMoney(st.money)} جنيه`;
-    const list = $('garage-list');
-    list.innerHTML = '';
-    for (const car of CARS) {
-      if (car.rented) continue;
-      const owned = st.owned.includes(car.id);
-      const div = document.createElement('div');
-      div.className = 'gcar' + (st.selected === car.id ? ' sel' : '') + (g.previewId === car.id ? ' prev' : '');
-      div.dataset.id = car.id;
-      const bar = (label, v) =>
-        `<div class="stat"><span>${label}</span><div class="bar gold"><i style="width:${Math.round(Math.min(1, v) * 100)}%"></i></div></div>`;
-      let action = '';
-      if (!owned) {
-        action = `<button class="btn" data-act="buy" data-id="${car.id}" ${st.money < car.price ? 'disabled' : ''}>اشترى بـ ${fmtMoney(car.price)} ج</button>`;
-      } else if (st.selected === car.id) {
-        action = `<button class="btn" disabled>العربية الحالية ✓</button>`;
-      } else {
-        action = `<button class="btn primary" data-act="use" data-id="${car.id}">اركب العربية</button>`;
-      }
-      let sw = '';
-      if (owned && !car.rented) {
-        sw =
-          '<div class="swatches">' +
-          COLORS.filter((c) => lookIds(car.body).includes(c.id)).map((c) => {
-            const has = g.hasColor(car.id, c.id);
-            const on = g.carLook(car.id) === c.id;
-            return `<button class="sw ${on ? 'on' : ''} ${has ? '' : 'locked'}" title="${c.name}${has ? '' : ' · ' + c.price + ' ج'}" data-car="${car.id}" data-color="${c.id}" style="background:${hex(c.hex)}">${has ? '' : `<small>${c.price}</small>`}</button>`;
-          }).join('') +
-          '</div><div class="meta" style="font-size:11px;color:var(--muted)">الألوان المقفولة بتتشترى بالفلوس (السعر مكتوب عليها)</div>';
-      }
-      const thumb = carThumb(car.body, owned ? g.carLook(car.id) : defaultLook(car.body));
-      div.innerHTML = `
-        ${thumb ? `<img class="gthumb" alt="${car.name}" src="${thumb}">` : ''}
-        <h3>${car.name}</h3>
-        <p>${car.desc}</p>
-        ${bar('السرعة', car.vmax / 60)}
-        ${bar('التسارع', car.accel / 11)}
-        ${bar('التحكم', car.handling / 1.2)}
-        <div class="meta" style="font-size:12px;color:var(--muted)">${car.rented ? `إيجار: ${car.fee} جنيه كل وردية` : `مصاريف تصليح: ${car.repair} ج لكل 1% ضرر`}· بتشيل لحد ${car.cap} ركاب</div>
-        ${sw}
-        ${action}`;
-      list.appendChild(div);
+    const tab = g.garageTab || 'private';
+    document.querySelectorAll('#g-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    const cars = CARS.filter((c) => !c.rented && c.cat === tab);
+    const jobs = tab === 'hire' ? g.cloud.workerJobs.filter((j) => j.status === 'active').map((j) => g.carSpec('job:' + j.id)).filter(Boolean) : [];
+    const all = [...cars, ...jobs];
+    let cur = all.find((c) => c.id === g.previewId) || all[0];
+    const strip = $('garage-list');
+    strip.innerHTML = all.map((c) => {
+      const owned = c.job || st.owned.includes(c.id);
+      const t = carThumb(c.body, owned && !c.job ? g.carLook(c.id) : defaultLook(c.body));
+      return `<button class="gitem${cur && cur.id === c.id ? ' prev' : ''}${st.selected === c.id ? ' sel' : ''}${owned ? '' : ' locked'}" data-id="${c.id}">${t ? `<img src="${t}" alt="">` : ''}<span>${c.name}</span><small>${st.selected === c.id ? '✓ بتركبها' : owned ? 'بتاعتك' : fmtMoney(c.price) + ' ج'}</small></button>`;
+    }).join('');
+    const info = $('g-info');
+    if (!cur) { info.innerHTML = '<div class="meta">مفيش عربيات هنا.</div>'; $('g-car').innerHTML = ''; return; }
+    const owned = cur.job || st.owned.includes(cur.id);
+    const bar = (label, v) => `<div class="stat"><span>${label}</span><div class="bar gold"><i style="width:${Math.round(Math.min(1, v) * 100)}%"></i></div></div>`;
+    let action;
+    if (cur.job) action = st.selected === cur.id ? '<button class="btn" disabled>العربية الحالية ✓</button>' : `<button class="btn primary" data-act="use" data-id="${cur.id}">اركب العربية</button>`;
+    else if (!owned) action = `<button class="btn primary" data-act="buy" data-id="${cur.id}" ${st.money < cur.price ? 'disabled' : ''}>اشترى بـ ${fmtMoney(cur.price)} ج</button>`;
+    else if (st.selected === cur.id) action = '<button class="btn" disabled>العربية الحالية ✓</button>';
+    else action = `<button class="btn primary" data-act="use" data-id="${cur.id}">اركب العربية</button>`;
+    let sw = '';
+    if (owned && !cur.job) {
+      sw = '<div class="swatches">' + COLORS.filter((c) => lookIds(cur.body).includes(c.id)).map((c) => {
+        const has = g.hasColor(cur.id, c.id);
+        const on = g.carLook(cur.id) === c.id;
+        return `<button class="sw ${on ? 'on' : ''} ${has ? '' : 'locked'}" title="${c.name}${has ? '' : ' · ' + c.price + ' ج'}" data-car="${cur.id}" data-color="${c.id}" style="background:${hex(c.hex)}">${has ? '' : `<small>${c.price}</small>`}</button>`;
+      }).join('') + '</div>';
     }
-    for (const job of g.cloud.workerJobs.filter((j) => j.status === 'active')) {
-      const spec = g.carSpec('job:' + job.id);
-      if (!spec) continue;
-      const div = document.createElement('div');
-      div.className = 'gcar' + (st.selected === spec.id ? ' sel' : '') + (g.previewId === spec.id ? ' prev' : '');
-      div.dataset.id = spec.id;
-      div.innerHTML = `<h3>🤝 ${spec.name}</h3>
-        <p>عربية صاحبك ${job.ownerName}. بتشتغل عليها ومن غير إيجار، وبتدفعله ${job.share}% من اللى بتكسبه.</p>
-        ${st.selected === spec.id ? '<button class="btn" disabled>العربية الحالية ✓</button>' : `<button class="btn primary" data-act="use" data-id="${spec.id}">اركب العربية</button>`}`;
-      list.appendChild(div);
-    }
+    info.innerHTML = `<div class="gi-main"><h3>${cur.name}</h3><p>${cur.job ? 'عربية صاحبك ' + cur.job.ownerName + ' · بتدفعله ' + cur.job.share + '%' : cur.desc}</p><div class="meta">${cur.rented ? '' : 'بتشيل لحد ' + cur.cap + ' ركاب · تصليح ' + cur.repair + ' ج لكل 1%'}</div>${sw}</div>
+      <div class="gi-stats">${bar('السرعة', cur.vmax / 60)}${bar('التسارع', cur.accel / 11)}${bar('التحكم', cur.handling / 1.2)}</div>
+      <div class="gi-act">${action}</div>`;
+    const look = owned && !cur.job ? g.carLook(cur.id) : defaultLook(cur.body);
+    const el = $('g-car');
+    el.style.setProperty('--cw', tab === 'bike' ? '15%' : cur.body === 'bus' ? '31%' : '25%');
+    el.innerHTML = carHtml(cur.body, look, owned && !cur.job ? st.mods[cur.id] : null);
+    this._carAspect(el);
+  }
+
+  _carAspect(el) {
+    const c = el.querySelector('.wr-car');
+    const a = c ? parseFloat(c.style.aspectRatio) : 2;
+    el.style.setProperty('--car-a', a || 2);
   }
 
   // ---------- الورشة ----------
@@ -252,6 +245,8 @@ export class UI {
     const mods = st.mods[id] || { slogan: '', accs: [] };
     const dmg = Math.round(st.damage[id] || 0);
     const cost = Math.round(dmg * car.repair);
+    const tab = g.wsTab || 'fix';
+    document.querySelectorAll('#ws-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.wt === tab));
     let h = '<div class="ws-cars">';
     for (const cid of g.ownedList()) {
       const c = getCar(cid);
@@ -259,25 +254,26 @@ export class UI {
       h += `<button class="ws-car${cid === id ? ' sel' : ''}" data-w="car" data-v="${cid}">${t ? `<img src="${t}" alt="">` : ''}<span>${c.name}</span></button>`;
     }
     h += '</div>';
-    h += `<h3 class="sec">🔧 التصليح</h3>
-      <div class="item"><div><b>${dmg ? `الضرر ${dmg}%` : 'العربية سليمة'}</b><div class="meta">${dmg ? `التصليح ${cost} جنيه (${car.repair} ج لكل 1%)` : 'مفيش حاجة تتصلح'}</div></div>
+    if (tab === 'fix') {
+      h += `<div class="item"><div><b>${dmg ? `الضرر ${dmg}%` : 'العربية سليمة'}</b><div class="meta">${dmg ? `التصليح ${cost} جنيه (${car.repair} ج لكل 1%)` : 'مفيش حاجة تتصلح'}</div></div>
       <button class="btn primary" data-w="repair" ${dmg < 1 ? 'disabled' : ''}>صلّح</button></div>`;
-    h += `<h3 class="sec">✨ التعلية والترويقة</h3>
-      <p class="ws-tag">روق عليها تديك أكتر</p>
-      <div class="meta" style="font-size:12.5px;color:var(--muted)">كل حاجة بتركّبها بتزوّد أجرتك بنسبة. الزيادة الحالية: <b style="color:var(--accent)">+${Math.round(modBonus(mods) * 100)}%</b></div>
-      <div class="ws-accs">`;
-    for (const a of ACCESSORIES) {
-      const on = (mods.accs || []).includes(a.id);
-      h += `<button class="opt${on ? ' sel' : ''}" data-w="acc" data-v="${a.id}"><b>${a.img ? `<img src="${a.img}" alt="" style="height:20px;vertical-align:middle"> ` : a.icon + ' '}${a.name}</b><small>${a.desc}</small><span class="otag ${on ? 'green' : 'gold'}">${on ? 'مركّب ✓ (اضغط لفكّه)' : a.price + ' ج · +' + Math.round(a.bonus * 100) + '%'}</span></button>`;
-    }
-    h += '</div>';
-    const cur = STICKERS.find((x) => x.id === mods.slogan);
-    h += `<h3 class="sec">✍️ استيكر على الزجاج الخلفى</h3>
-      <div class="meta" style="font-size:12.5px;color:var(--muted)">${cur ? 'الحالى: «' + cur.text + '»' : 'مفيش استيكر لسه'} · اللزق ${SLOGAN_PRICE} جنيه (+3%)</div>
+    } else if (tab === 'acc') {
+      h += `<div class="meta" style="font-size:12.5px;color:var(--muted)">كل حاجة بتركّبها بتزوّد أجرتك. الزيادة الحالية: <b style="color:var(--accent)">+${Math.round(modBonus(mods) * 100)}%</b></div><div class="ws-accs">`;
+      for (const a of ACCESSORIES) {
+        const on = (mods.accs || []).includes(a.id);
+        h += `<button class="opt${on ? ' sel' : ''}" data-w="acc" data-v="${a.id}"><b>${a.img ? `<img src="${a.img}" alt="" style="height:20px;vertical-align:middle"> ` : a.icon + ' '}${a.name}</b><small>${a.desc}</small><span class="otag ${on ? 'green' : 'gold'}">${on ? 'مركّب ✓ (اضغط لفكّه)' : a.price + ' ج · +' + Math.round(a.bonus * 100) + '%'}</span></button>`;
+      }
+      h += '</div>';
+    } else {
+      const cur = STICKERS.find((x) => x.id === mods.slogan);
+      h += `<div class="meta" style="font-size:12.5px;color:var(--muted)">${cur ? 'الحالى: «' + cur.text + '»' : 'مفيش استيكر لسه'} · اللزق ${SLOGAN_PRICE} جنيه (+3%)</div>
       <div class="ws-stickers">${STICKERS.map((t) => `<button class="stk${mods.slogan === t.id ? ' sel' : ''}" data-w="slogan" data-v="${t.id}" title="${t.text}"><img src="assets/images/stickers/${t.id}.webp" alt="${t.text}" loading="lazy"></button>`).join('')}</div>
       <div class="ws-custom"><button class="btn" data-w="noslogan" ${mods.slogan ? '' : 'disabled'}>شيل الاستيكر</button></div>`;
+    }
     $('workshop-body').innerHTML = h;
-    $('ws-room').innerHTML = workshopRoom(car.body, g.carLook(id), mods);
+    $('ws-room').innerHTML = carHtml(car.body, g.carLook(id), mods);
+    this._carAspect($('ws-room'));
+    $('ws-room').style.setProperty('--cw', car.cat === 'bike' ? '17%' : car.body === 'bus' ? '36%' : '30%');
   }
 
   // ---------- الحساب ----------
@@ -464,6 +460,7 @@ export class UI {
   renderSettings() {
     const s = this.g.state.settings;
     $('s-sound').checked = s.sound;
+    document.querySelectorAll('#s-ctl button').forEach((b) => b.classList.toggle('on', b.dataset.ctl === (s.control || 'arrows')));
     $('s-vibrate').checked = s.vibrate;
     $('s-auto').checked = s.auto;
     $('s-steer').value = s.steer;
@@ -503,8 +500,8 @@ export class UI {
     fn(val);
   }
 
-  setSpeed(kmh) {
-    this._set('speed', kmh, (v) => ($('speed').textContent = v));
+  setSpeed(kmh, rev) {
+    this._set('speed', kmh + (rev ? 'R' : ''), () => { $('speed').textContent = kmh; $('speed').classList.toggle('rev', !!rev); });
   }
 
   setMoney(n) {

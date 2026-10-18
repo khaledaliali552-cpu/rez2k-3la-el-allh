@@ -14,7 +14,7 @@ import { Sfx } from './sfx.js';
 import { UI } from './ui.js';
 import * as Save from './save.js';
 import {
-  QUEST_POOL, ACHIEVEMENTS, SHIFT_SECONDS, RADAR_FINE, THEME_ORDER, WELCOME_BONUS,
+  CARS, QUEST_POOL, ACHIEVEMENTS, SHIFT_SECONDS, RADAR_FINE, THEME_ORDER, WELCOME_BONUS,
   getCar, getColor, colorKey, getAcc, stickerById, SLOGAN_PRICE, modBonus, getBoss, getRentVehicle, pick, clamp, fmtMoney, fmtTime,
 } from './data.js';
 
@@ -72,6 +72,10 @@ class Game {
     this.input.onHorn = () => this.horn();
     this.input.bindWheel(document.getElementById('wheel'), document.getElementById('wheel-face'));
     if (IS_TOUCH) document.body.classList.add('touch-mode');
+    this.input.bindStick(document.getElementById('stick'), document.getElementById('stick-knob'));
+    this.input.bindHold(document.getElementById('t-left'), 'left');
+    this.input.bindHold(document.getElementById('t-right'), 'right');
+    this.applyControl();
     this.input.bindHold(document.getElementById('t-gas'), 'gas');
     this.input.bindHold(document.getElementById('t-brake'), 'brake');
     document.getElementById('t-horn').addEventListener('pointerdown', (e) => {
@@ -322,9 +326,20 @@ class Game {
     this.ui.show('menu');
   }
 
+  setGarageTab(t) {
+    this.garageTab = t;
+    const first = CARS.find((c) => !c.rented && c.cat === t);
+    const own = CARS.find((c) => !c.rented && c.cat === t && this.state.owned.includes(c.id));
+    this.previewId = (own || first).id;
+    this.ui.renderGarage();
+  }
+
   openGarage() {
     this.mode = 'garage';
     this.previewId = this.state.selected;
+    const sc = getCar(this.state.selected);
+    this.garageTab = sc && sc.cat ? sc.cat : 'private';
+    if (sc && sc.rented) { this.garageTab = 'hire'; }
     this.enterPreview();
     this.mode = 'garage';
     this.ui.renderGarage();
@@ -559,8 +574,17 @@ class Game {
     this.ui.renderGarage();
   }
 
+  applyControl() {
+    const c = this.state.settings.control || 'arrows';
+    document.body.dataset.ctl = c;
+    this.input.mode = c;
+    this.input.clear();
+    this.ui && this.ui.renderSettings && this.ui.renderSettings();
+  }
+
   setSetting(key, val) {
     this.state.settings[key] = val;
+    if (key === 'control') this.applyControl();
     if (key === 'sound') this.sfx.setEnabled(val);
     this.save();
   }
@@ -909,7 +933,7 @@ class Game {
     const p = this.player;
     const inp = this.input;
 
-    inp.poll(dt, st.settings.auto);
+    inp.poll(dt, st.settings.auto, this.player.v);
     if (!s.over) {
       s.t -= dt;
       if (s.t <= 0) {
@@ -920,7 +944,7 @@ class Game {
     }
 
     const evs = p.update(dt, inp, { steer: st.settings.steer, brakeSens: st.settings.brakeSens });
-    s.km += (p.v * dt) / 1000;
+    s.km += (Math.abs(p.v) * dt) / 1000;
     for (const e of evs) {
       if (e.type === 'hardBrake') this.rides.noteRough('hard');
       else if (e.type === 'swerve') this.rides.noteRough('swerve');
@@ -947,7 +971,7 @@ class Game {
     }
 
     this.world.update(p.s);
-    this.sfx.updateEngine(p.v, p.vmaxEff, inp.throttle);
+    this.sfx.updateEngine(Math.abs(p.v), p.vmaxEff, Math.max(inp.throttle, inp.reverse * 0.6));
     this.updateCamera(dt);
     this.updateHud();
   }
@@ -1006,8 +1030,8 @@ class Game {
   updateCamera(dt) {
     const p = this.player;
     const cam = this.camera;
-    const back = 9.2 + p.v * 0.03;
-    const want = new THREE.Vector3(cx(p.s - back) + p.x * 0.85, 3.9 + p.v * 0.012, -(p.s - back));
+    const back = 9.2 + Math.max(p.v, 0) * 0.03;
+    const want = new THREE.Vector3(cx(p.s - back) + p.x * 0.85, 3.9 + Math.max(p.v, 0) * 0.012, -(p.s - back));
     const look = new THREE.Vector3(cx(p.s + 16) + p.x * 0.9, 1.3, -(p.s + 16));
     if (!this.camReady) {
       this.camPos.copy(want);
@@ -1025,7 +1049,7 @@ class Game {
       this.shake = Math.max(0, this.shake - dt * 1.8);
     }
     cam.lookAt(this.camLook);
-    const fov = 60 + 16 * clamp(p.v / p.spec.vmax, 0, 1);
+    const fov = 60 + 16 * clamp(Math.abs(p.v) / p.spec.vmax, 0, 1);
     if (Math.abs(cam.fov - fov) > 0.1) {
       cam.fov += (fov - cam.fov) * Math.min(1, dt * 4);
       cam.updateProjectionMatrix();
@@ -1037,7 +1061,7 @@ class Game {
     const p = this.player;
     const s = this.shift;
     const r = this.rides;
-    ui.setSpeed(Math.round(p.v * 3.6));
+    ui.setSpeed(Math.round(Math.abs(p.v) * 3.6), p.v < -0.3);
     ui.setMoney(s.fares + s.tips - s.fines);
     ui.setTimer(s.t, s.over);
     ui.setDamage(p.damage);

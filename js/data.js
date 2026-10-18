@@ -29,54 +29,99 @@ export const CARS = [
     vmax: 34, accel: 5.2, brake: 15, handling: 0.85, repair: 18, fareMul: 1,
   },
   {
-    id: 'lada', name: 'صندوقية قديمة', body: 'lada', price: 4000, cap: 3,
+    id: 'lada', cat: 'private', name: 'صندوقية قديمة', body: 'lada', price: 4000, cap: 3,
     desc: 'عربية مربعة من أيام زمان. رخيصة وبتتصلح بسهولة.',
     vmax: 33, accel: 5.4, brake: 15, handling: 0.95, repair: 14, fareMul: 1,
   },
   {
-    id: 'moto', name: 'موتوسيكل', body: 'moto', price: 3000, cap: 1,
+    id: 'moto', cat: 'bike', name: 'موتوسيكل', body: 'moto', price: 3000, cap: 1,
     desc: 'بتزن بين العربيات! راكب واحد بس، لكن مشاويرك أسرع.',
     vmax: 40, accel: 9, brake: 20, handling: 1.3, repair: 8, fareMul: 1,
   },
   {
-    id: 'hatch', name: 'هاتشباك صغيرة', body: 'hatch', price: 6000, cap: 3,
+    id: 'hatch', cat: 'private', name: 'هاتشباك صغيرة', body: 'hatch', price: 6000, cap: 3,
     desc: 'خفيفة وسهلة فى الزحمة، لكن مش سريعة أوى.',
     vmax: 38, accel: 6.2, brake: 16, handling: 1.0, repair: 18, fareMul: 1,
   },
   {
-    id: 'taxi_new', name: 'تاكسى جديد', body: 'taxi', price: 12000, cap: 4,
+    id: 'taxi_new', cat: 'hire', name: 'تاكسى جديد', body: 'taxi', price: 12000, cap: 4,
     desc: 'تاكسى بتاعك انت! أسرع وأثبت، وبتشيل 4 ركاب.',
     vmax: 42, accel: 6.8, brake: 17, handling: 0.95, repair: 20, fareMul: 1,
   },
   {
-    id: 'sedan', name: 'ملاكى سيدان', body: 'sedan', price: 25000, cap: 4,
+    id: 'sedan', cat: 'private', name: 'ملاكى سيدان', body: 'sedan', price: 25000, cap: 4,
     desc: 'مريحة وثابتة على الطريق السريع، والركاب الغالية بتحبها.',
     vmax: 46, accel: 7.5, brake: 18, handling: 1.0, repair: 24, fareMul: 1,
   },
   {
-    id: 'microbus', name: 'ميكروباص', body: 'microbus', price: 40000, cap: 6,
+    id: 'microbus', cat: 'hire', name: 'ميكروباص', body: 'microbus', price: 40000, cap: 6,
     desc: 'بتشيل لحد 6 ركاب فى المشوار الواحد. تقيل شوية فى اللف.',
     vmax: 36, accel: 5.5, brake: 15, handling: 0.75, repair: 30, fareMul: 1,
   },
   {
-    id: 'coupe', name: 'كوبيه رياضية', body: 'coupe', price: 60000, cap: 2,
+    id: 'coupe', cat: 'private', name: 'كوبيه رياضية', body: 'coupe', price: 60000, cap: 2,
     desc: 'سريعة جدا وتلف زى الفرخة. خلى بالك من الرادارات!',
     vmax: 56, accel: 10, brake: 22, handling: 1.15, repair: 36, fareMul: 1,
   },
   {
-    id: 'suv', name: 'عربية فالية', body: 'suv', price: 90000, cap: 4,
+    id: 'suv', cat: 'private', name: 'عربية فالية', body: 'suv', price: 90000, cap: 4,
     desc: 'دفع رباعى سودة وكبيرة. الناس بتبصلك وانت معدّى.',
     vmax: 48, accel: 8, brake: 19, handling: 0.9, repair: 40, fareMul: 1,
   },
   {
-    id: 'gwagon', name: 'جيب مربع 4×4', body: 'gwagon', price: 240000, cap: 4,
+    id: 'gwagon', cat: 'private', name: 'جيب مربع 4×4', body: 'gwagon', price: 240000, cap: 4,
     desc: 'جيب أسود مربع بستبن ورا. تقيل وهيبة وغالى.',
     vmax: 50, accel: 8.5, brake: 19, handling: 0.88, repair: 55, fareMul: 1,
   },
   {
-    id: 'luxury', name: 'عربية فارهة', body: 'luxury', price: 180000, cap: 4,
+    id: 'luxury', cat: 'private', name: 'عربية فارهة', body: 'luxury', price: 180000, cap: 4,
     desc: 'آخر حاجة. فخمة، سريعة، وغالية فى التصليح.',
     vmax: 54, accel: 9.5, brake: 21, handling: 1.05, repair: 60, fareMul: 1,
+  },
+  {
+    id: 'tuktuk', name: 'توك توك', body: 'tuktuk', price: 9000, cap: 3, cat: 'hire',
+    desc: 'صغير ومرن وبيدخل أى حارة. بطىء لكن رخيص.',
+    vmax: 24, accel: 4.6, brake: 14, handling: 1.2, repair: 10, fareMul: 1,
+  },
+  {
+    id: 'tuktuk2', name: 'توكتوك معدّل', body: 'tuktuk2', price: 15000, cap: 3, cat: 'hire',
+    desc: 'متزوّق باستبن وصدام وألوان. شكله يلفت.',
+    vmax: 25, accel: 4.8, brake: 14, handling: 1.15, repair: 12, fareMul: 1,
+  },
+  {
+    id: 'bus', name: 'أتوبيس الإسكندرية', body: 'bus', price: 120000, cap: 6, cat: 'hire',
+    desc: 'أتوبيس نقل عام قديم. بيشيل 6 ركاب، تقيل جدا فى اللف.',
+    vmax: 30, accel: 4.2, brake: 13, handling: 0.6, repair: 70, fareMul: 1,
+  },
+  {
+    id: 'dababa', name: 'دبابة (بيك أب)', body: 'pickup', price: 55000, cap: 3, cat: 'private',
+    desc: 'بيك أب شغال وبتاع مشاوير. قوى وبيتحمل.',
+    vmax: 40, accel: 6.0, brake: 16, handling: 0.92, repair: 32, fareMul: 1,
+  },
+  {
+    id: 'vespa', name: 'فيسبا', body: 'vespa', price: 9000, cap: 1, cat: 'bike',
+    desc: 'سكوتر كلاسيك خفيف ومريح فى الزحمة.',
+    vmax: 34, accel: 8, brake: 18, handling: 1.3, repair: 7, fareMul: 1,
+  },
+  {
+    id: 'daiwa', name: 'موتوسيكل دايو', body: 'daiwa', price: 5000, cap: 1, cat: 'bike',
+    desc: 'موتوسيكل شعبى متزوّق بألوان فسفورى.',
+    vmax: 38, accel: 8.5, brake: 19, handling: 1.3, repair: 8, fareMul: 1,
+  },
+  {
+    id: 'benelli', name: 'موتوسيكل بنلى', body: 'benelli', price: 14000, cap: 1, cat: 'bike',
+    desc: 'موتوسيكل كلاسيك بصوت تقيل وسرعة حلوة.',
+    vmax: 46, accel: 9.5, brake: 20, handling: 1.3, repair: 12, fareMul: 1,
+  },
+  {
+    id: 'harley', name: 'موتوسيكل هارلى', body: 'harley', price: 38000, cap: 1, cat: 'bike',
+    desc: 'سكرامبلر أخضر للطرق الوعرة والسريعة.',
+    vmax: 52, accel: 10, brake: 21, handling: 1.2, repair: 18, fareMul: 1,
+  },
+  {
+    id: 'hojen', name: 'موتوسيكل هوجن', body: 'hojen', price: 70000, cap: 2, cat: 'bike',
+    desc: 'دراجة سفر كبيرة بتشيل اتنين.',
+    vmax: 54, accel: 9, brake: 20, handling: 1.0, repair: 26, fareMul: 1,
   },
 ];
 
