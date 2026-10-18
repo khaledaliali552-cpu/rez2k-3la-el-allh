@@ -292,3 +292,24 @@ body.touch-mode .dmg { width: 84px; }
 /* ظل ملامسة للأرض للصور (واقعية أو متولدة) */
 .gthumb, .othumb, .ws-car img { filter: drop-shadow(0 7px 5px rgba(0, 0, 0, .5)) drop-shadow(0 1px 1px rgba(0, 0, 0, .6)); }
 .gthumb { background: radial-gradient(ellipse 60% 18% at 50% 86%, rgba(0,0,0,.35), transparent 70%), radial-gradient(ellipse at 50% 80%, rgba(255,255,255,.14), rgba(255,255,255,.02)); }
+
+/* استيكرات الزجاج الخلفى */
+.ws-stickers { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin: 8px 0; }
+.stk { background: rgba(255,255,255,.07); border: 2px solid var(--line); border-radius: 12px; padding: 6px; display: flex; align-items: center; justify-content: center; min-height: 56px; cursor: pointer; }
+.stk img { max-width: 100%; max-height: 52px; object-fit: contain; }
+.stk.sel { border-color: var(--accent); background: rgba(255,200,60,.16); }
+
+#uturn-fade { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity .26s ease; pointer-events: none; z-index: 40; }
+
+/* ---------- خلفية الورشة ---------- */
+#screen-workshop { background: #1b1d22; }
+#screen-workshop .panel { position: relative; z-index: 2; }
+#ws-room { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
+.wr-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wr-car { position: absolute; right: 7vw; bottom: 9vh; width: min(34vw, 440px); display: none; }
+@media (min-width: 900px) { .wr-car { display: block; } }
+.wr-body { position: relative; width: 100%; transition: transform .3s; }
+.wr-body > img:first-child { width: 100%; display: block; filter: drop-shadow(0 14px 8px rgba(0,0,0,.55)); }
+.wr-stk { position: absolute; left: 50%; transform: translateX(-50%); }
+.wr-bar { position: absolute; left: 25%; width: 50%; top: -1%; height: 5%; background: repeating-linear-gradient(90deg,#3b8bff 0 12.5%,#ff3b3b 12.5% 25%); border-radius: 3px; }
+.wr-neon { position: absolute; left: -12%; right: -12%; bottom: -10%; height: 26%; background: radial-gradient(ellipse at center, rgba(90,230,255,.85), rgba(90,230,255,0) 70%); }

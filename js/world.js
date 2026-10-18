@@ -2,7 +2,9 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { mergeParts } from './geo.js';
 import { setSpriteLight } from './sprites.js';
-import { getRoad, landmarkS, landmarkAt, landmarkAfter, radarS, radarLimit, nextRadarIndex } from './roads.js';
+import { getRoad, landmarkS, landmarkAt, landmarkAfter, radarS, radarLimit, nextRadarIndex, uturnS, nextUturnIndex } from './roads.js';
+
+export const UT_HALF = 14; // نص طول فتحة الدوران بالمتر
 
 // ---------- هندسة الطريق ----------
 export const LANE_W = 3.6;
@@ -117,6 +119,11 @@ function wall(s0, s1, x, y0, y1, material, nSeg) {
 
 const T = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
 const FLOOR_H = { apt: 3, old: 3, glass: 3, shed: 6 };
+// واجهات بصور (عرض/ارتفاع، ونقطة ساكنة فى الصورة للجوانب)
+const IMG_FACADES = {
+  imgA: { file: 'fac-plaster', aspect: 0.7186, plain: [0.852, 0.235] },
+  imgB: { file: 'fac-skeleton', aspect: 0.7422, plain: [0.113, 0.806] },
+};
 const SHOP_H = 5;
 const TILE_W = 12;
 
@@ -337,6 +344,16 @@ export class World {
     mk('old', 3, oldDraw);
     mk('glass', 3, glassDraw);
     mk('shed', 6, shedDraw);
+    // واجهات الصور: صورة العمارة على وش المبنى
+    const black = canvasTex(4, 4, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); }, false);
+    const tl = new THREE.TextureLoader();
+    for (const [k, d] of Object.entries(IMG_FACADES)) {
+      const t = tl.load('assets/images/scenery/' + d.file + '.webp');
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      this.facade[k] = t;
+      this.facadeLit[k] = black;
+    }
 
     // واجهات المحلات (3 أشكال)
     this.shopTex = [];
@@ -581,9 +598,21 @@ export class World {
 
   // ---------- المبانى ----------
   // صندوق بإحداثيات UV مظبوطة لتكرار الواجهة (D = عمق عرضى، L = الطول على الطريق)
-  _facadeBox(D, h, L, kind, base) {
+  _facadeBox(D, h, L, kind, base, side = 1) {
     const g = new THREE.BoxGeometry(D, h, L);
     const uv = g.attributes.uv;
+    if (kind === 'img') {
+      const [pu, pv] = IMG_FACADES[base].plain;
+      const front = side > 0 ? 1 : 0; // الوش اللى ناحية الطريق
+      for (let f = 0; f < 6; f++) {
+        for (let v = 0; v < 4; v++) {
+          const i = f * 4 + v;
+          if (f === front) continue; // الصورة كاملة على الوش
+          uv.setXY(i, pu, pv);
+        }
+      }
+      return g;
+    }
     const tileH = kind === 'shop' ? SHOP_H : FLOOR_H[base];
     for (let f = 0; f < 6; f++) {
       for (let v = 0; v < 4; v++) {
@@ -611,7 +640,7 @@ export class World {
       put('shop' + v, this._facadeBox(D, SHOP_H, L, 'shop'), SHOP_H / 2, tint);
       put(style, this._facadeBox(D, h - SHOP_H, L, 'floor', style), SHOP_H + (h - SHOP_H) / 2, tint);
     } else {
-      put(style, this._facadeBox(D, h, L, 'floor', style), h / 2, tint);
+      put(style, style.startsWith('img') ? this._facadeBox(D, h, L, 'img', style, x < 0 ? -1 : 1) : this._facadeBox(D, h, L, 'floor', style), h / 2, tint);
     }
     const side = x < 0 ? -1 : 1;
     const fx = -side * (D / 2); // وش المبنى ناحية الطريق (محلى)
@@ -675,13 +704,22 @@ export class World {
         continue;
       }
       const D = cfg.depth[0] + rng() * (cfg.depth[1] - cfg.depth[0]);
-      const styleKey = cfg.styles[Math.floor(rng() * cfg.styles.length)];
+      let styleKey = cfg.styles[Math.floor(rng() * cfg.styles.length)];
       const tints = cfg.tints[styleKey] || cfg.tints.default;
       const floors = cfg.floors[0] + Math.floor(rng() * (cfg.floors[1] - cfg.floors[0] + 1));
-      const h = styleKey === 'shed' ? 8 + rng() * 5 : cfg.shops ? SHOP_H + floors * 3 : floors * 3;
+      let h = styleKey === 'shed' ? 8 + rng() * 5 : cfg.shops ? SHOP_H + floors * 3 : floors * 3;
+      let useShops = cfg.shops && styleKey !== 'shed';
+      if (styleKey.startsWith('img')) {
+        if (CHUNK - pos < 15) styleKey = 'apt';
+        else {
+          L = Math.min(CHUNK - pos, 15 + rng() * 3);
+          h = L / IMG_FACADES[styleKey].aspect;
+          useShops = false;
+        }
+      }
       const s = s0 + pos + L / 2;
       const x = side * (cfg.front + D / 2 + rng() * cfg.jitter);
-      this._addBuilding(bag, { s, x, D, L: L - 0.3, h, style: styleKey, tint: tints[Math.floor(rng() * tints.length)], shops: cfg.shops && styleKey !== 'shed' }, rng);
+      this._addBuilding(bag, { s, x, D, L: L - 0.3, h, style: styleKey, tint: styleKey.startsWith('img') ? 0xffffff : tints[Math.floor(rng() * tints.length)], shops: useShops && !styleKey.startsWith('img') }, rng);
       pos += L;
     }
   }
@@ -692,23 +730,23 @@ export class World {
     const old = [0xf0e2c0, 0xe6d3a6, 0xdcc89a, 0xe9d9b8];
     const glass = [0xbfd3e4, 0xaec4d4, 0xc9d9d6, 0xd0d8e2];
     const sheds = [0xdfe2de, 0xc9d3dc, 0xdbd2c0, 0xd2d9cf];
-    const tints = { default: warm, apt: warm.concat(cool), old, glass, shed: sheds };
+    const tints = { default: warm, apt: warm.concat(cool), old, glass, shed: sheds, imgA: [0xffffff], imgB: [0xffffff] };
     const e = road.env;
     const L = {
       towers: [
-        { front: 27, jitter: 2, depth: [16, 22], len: [16, 26], floors: [8, 18], styles: ['apt', 'apt', 'apt', 'glass', 'glass'], gap: 0.05, shops: true, tints },
+        { front: 27, jitter: 2, depth: [16, 22], len: [16, 26], floors: [8, 18], styles: ['apt', 'apt', 'glass', 'glass', 'imgA'], gap: 0.05, shops: true, tints },
         { front: 58, jitter: 4, depth: [18, 26], len: [22, 34], floors: [14, 28], styles: ['glass', 'apt', 'glass'], gap: 0.3, shops: false, tints },
       ],
       old: [
-        { front: 27, jitter: 1, depth: [14, 18], len: [12, 20], floors: [4, 8], styles: ['old', 'old', 'old', 'apt'], gap: 0.06, shops: true, tints },
+        { front: 27, jitter: 1, depth: [14, 18], len: [12, 20], floors: [4, 8], styles: ['old', 'old', 'old', 'apt', 'imgA', 'imgB'], gap: 0.06, shops: true, tints },
         { front: 50, jitter: 3, depth: [16, 20], len: [16, 26], floors: [6, 11], styles: ['apt', 'old'], gap: 0.25, shops: false, tints },
       ],
       shops: [
-        { front: 26, jitter: 1, depth: [12, 16], len: [10, 16], floors: [2, 5], styles: ['apt', 'apt', 'old', 'old'], gap: 0.12, shops: true, tints },
+        { front: 26, jitter: 1, depth: [12, 16], len: [10, 16], floors: [2, 5], styles: ['apt', 'old', 'old', 'imgA', 'imgA', 'imgB'], gap: 0.12, shops: true, tints },
         { front: 44, jitter: 3, depth: [14, 18], len: [14, 22], floors: [4, 8], styles: ['apt', 'old'], gap: 0.3, shops: false, tints },
       ],
       mixed: [
-        { front: 32, jitter: 5, depth: [14, 20], len: [14, 24], floors: [3, 8], styles: ['apt', 'apt', 'glass', 'old'], gap: 0.4, shops: true, tints },
+        { front: 32, jitter: 5, depth: [14, 20], len: [14, 24], floors: [3, 8], styles: ['apt', 'glass', 'old', 'imgA', 'imgB'], gap: 0.4, shops: true, tints },
       ],
       industrial: [
         { front: 36, jitter: 6, depth: [20, 30], len: [24, 40], floors: [1, 1], styles: ['shed'], gap: 0.45, shops: false, tints },
@@ -716,11 +754,11 @@ export class World {
     };
     const R = {
       buildings: [
-        { front: 15.5, jitter: 1, depth: [14, 18], len: [12, 20], floors: [5, 10], styles: ['apt', 'apt', 'apt', 'old', 'glass'], gap: 0.08, shops: true, tints },
+        { front: 15.5, jitter: 1, depth: [14, 18], len: [12, 20], floors: [5, 10], styles: ['apt', 'apt', 'old', 'glass', 'imgA', 'imgA', 'imgB'], gap: 0.08, shops: true, tints },
         { front: 40, jitter: 4, depth: [16, 22], len: [18, 28], floors: [8, 15], styles: ['apt', 'glass'], gap: 0.3, shops: false, tints },
       ],
       canal: [
-        { front: 25, jitter: 1, depth: [12, 16], len: [10, 16], floors: [3, 6], styles: ['apt', 'apt', 'old'], gap: 0.14, shops: true, tints },
+        { front: 25, jitter: 1, depth: [12, 16], len: [10, 16], floors: [3, 6], styles: ['apt', 'old', 'imgA', 'imgB'], gap: 0.14, shops: true, tints },
       ],
       sea: [],
       desert: [],
@@ -749,11 +787,35 @@ export class World {
     // الأسفلت والجزيرة
     addMesh(ribbon(s0, s1, ROAD_L, ROAD_R, 0, this.mRoad, N, 12));
     addMesh(ribbon(s0, s1, ONC_L, ONC_R, 0, this.mRoadOnc, N, 12));
-    addMesh(ribbon(s0, s1, ONC_R, ROAD_L, 0.3, this.mConcrete, N, 12));
-    addMesh(wall(s0, s1, ROAD_L, 0, 0.3, this.mConcrete, N));
-    addMesh(wall(s0, s1, ONC_R, 0, 0.3, this.mConcrete, N));
-    if (env.median === 'guardrail') addMesh(wall(s0, s1, -8.2, 0.3, 0.95, this.mRail, N));
-    if (env.median === 'concrete') addMesh(wall(s0, s1, -8.2, 0.3, 0.75, this.mConcrete, N));
+    // الجزيرة الوسطى: بتتقطع عند فتحات الدوران
+    const gaps = [];
+    if (road.uturn) {
+      for (let k = nextUturnIndex(road, s0 - 40); uturnS(road, k) - 40 < s1; k++) gaps.push(uturnS(road, k));
+    }
+    const segs = [];
+    let cur = s0;
+    for (const g of gaps) {
+      const a = Math.max(s0, g - UT_HALF), b = Math.min(s1, g + UT_HALF);
+      if (b <= a) continue;
+      if (a > cur) segs.push([cur, a]);
+      cur = Math.max(cur, b);
+    }
+    if (cur < s1) segs.push([cur, s1]);
+    const nsg = (a, b) => Math.max(1, Math.ceil((N * (b - a)) / CHUNK));
+    for (const [a, b] of segs) {
+      const n = nsg(a, b);
+      addMesh(ribbon(a, b, ONC_R, ROAD_L, 0.3, this.mConcrete, n, 12));
+      addMesh(wall(a, b, ROAD_L, 0, 0.3, this.mConcrete, n));
+      addMesh(wall(a, b, ONC_R, 0, 0.3, this.mConcrete, n));
+      if (env.median === 'guardrail') addMesh(wall(a, b, -8.2, 0.3, 0.95, this.mRail, n));
+      if (env.median === 'concrete') addMesh(wall(a, b, -8.2, 0.3, 0.75, this.mConcrete, n));
+    }
+    for (const g of gaps) {
+      const a = Math.max(s0, g - UT_HALF), b = Math.min(s1, g + UT_HALF);
+      if (b > a) addMesh(ribbon(a, b, ONC_R, ROAD_L, 0.02, this.mRoad, nsg(a, b), 3));
+      if (g >= s0 - 120 && g < s1) this._uturnDecor(group, geos, g, s0, s1);
+    }
+    const inGap = (sv) => gaps.some((g) => Math.abs(sv - g) < UT_HALF + 2);
 
     // الجهة اليمين
     if (sea) {
@@ -810,7 +872,7 @@ export class World {
       for (let k = 0; k < 5; k++) trees.push({ s: s0 + 4 + k * 16 + rng() * 5, x: 10.6 + rng() * 0.6, yaw: rng() * 6.28, scale: 0.8 + rng() * 0.4 });
       for (let k = 0; k < 4; k++) trees.push({ s: s0 + 6 + k * 20 + rng() * 6, x: -22.6, yaw: rng() * 6.28, scale: 0.8 + rng() * 0.4 });
     }
-    if (env.median === 'palms') for (let k = 0; k < 3; k++) palms.push({ s: s0 + 10 + k * 26.6, x: -8.2, yaw: rng() * 6.28, scale: 0.8 });
+    if (env.median === 'palms') for (let k = 0; k < 3; k++) { const sv = s0 + 10 + k * 26.6; if (!inGap(sv)) palms.push({ s: sv, x: -8.2, yaw: rng() * 6.28, scale: 0.8 }); }
     if (env.right === 'desert') {
       for (let k = 0; k < 8; k++) {
         const x = 14 + rng() * 60;
@@ -996,6 +1058,89 @@ export class World {
     for (const [i, c] of this.chunks) {
       const s0 = i * CHUNK;
       this._landmarkSigns(c.group, s, name, s0, s0 + CHUNK);
+    }
+  }
+
+  _uturnTex() {
+    if (!this.utTex) {
+      this.utTex = canvasTex(256, 128, (g, w, h) => {
+        g.fillStyle = '#0b5cab';
+        g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#fff';
+        g.lineWidth = 6;
+        g.strokeRect(5, 5, w - 10, h - 10);
+        // سهم دوران لورا
+        g.strokeStyle = '#fff';
+        g.lineWidth = 12;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(70, 104);
+        g.lineTo(70, 46);
+        g.arc(100, 46, 30, Math.PI, 0);
+        g.lineTo(130, 70);
+        g.stroke();
+        g.fillStyle = '#fff';
+        g.beginPath();
+        g.moveTo(112, 64);
+        g.lineTo(148, 64);
+        g.lineTo(130, 92);
+        g.fill();
+        g.font = 'bold 40px Arial, sans-serif';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText('دوران', 200, 64);
+      }, false);
+      this.utArrow = canvasTex(128, 256, (g, w, h) => {
+        g.clearRect(0, 0, w, h);
+        g.strokeStyle = 'rgba(255,255,255,0.92)';
+        g.lineWidth = 16;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(88, 250);
+        g.lineTo(88, 100);
+        g.arc(52, 100, 36, 0, -Math.PI, true);
+        g.lineTo(16, 150);
+        g.stroke();
+        g.fillStyle = 'rgba(255,255,255,0.92)';
+        g.beginPath();
+        g.moveTo(-6, 146);
+        g.lineTo(38, 146);
+        g.lineTo(16, 190);
+        g.fill();
+      }, false);
+    }
+  }
+
+  // علامات الدوران: لوحة على اليمين من بعيد، ولوحة على الجزيرة، وسهم مرسوم على الحارة الشمال
+  _uturnDecor(group, geos, su, s0, s1) {
+    this._uturnTex();
+    const board = (ss, x) => {
+      if (ss < s0 || ss >= s1) return;
+      const m = new THREE.MeshBasicMaterial({ map: this.utTex });
+      const b = new THREE.Mesh(this.signGeo, m);
+      b.scale.set(1.9, 1, 1);
+      b.position.set(cx(ss) + x, 2.8, -ss);
+      b.rotation.y = -Math.atan(dcx(ss));
+      group.add(b);
+      geos.push(m);
+      const post = new THREE.Mesh(this.unitBox, this.mMetal);
+      post.scale.set(0.12, 2.8, 0.12);
+      post.position.set(cx(ss) + x, 1.4, -ss - 0.05);
+      group.add(post);
+    };
+    board(su - 170, 8.6);
+    board(su - 55, -8.2);
+    const sa = su - 34;
+    if (sa >= s0 && sa < s1) {
+      const geo = new THREE.PlaneGeometry(2.4, 6.4);
+      const m = new THREE.MeshBasicMaterial({ map: this.utArrow, transparent: true, depthWrite: false });
+      const a = new THREE.Mesh(geo, m);
+      a.rotation.set(-Math.PI / 2, 0, 0);
+      a.position.set(cx(sa) - 5.4, 0.05, -sa);
+      a.rotation.order = 'YXZ';
+      a.rotation.y = -Math.atan(dcx(sa));
+      group.add(a);
+      geos.push(geo, m);
     }
   }
 

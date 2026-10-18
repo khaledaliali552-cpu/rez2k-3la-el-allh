@@ -7,6 +7,7 @@ export const ROADS = [
     name: 'طريق البشاوات',
     sub: 'طريق الجيش · كورنيش البحر',
     curve: { a: 60, la: 500, b: 22, lb: 190 },
+    uturn: { first: 1300, step: 1700 },
     perKm: 45,
     flag: 10,
     tag: 'غالية',
@@ -31,6 +32,7 @@ export const ROADS = [
     name: 'طريق أبو قير',
     sub: 'من باب شرق لحد أبو قير',
     curve: { a: 75, la: 450, b: 30, lb: 170 },
+    uturn: { first: 1100, step: 1500 },
     perKm: 22,
     flag: 10,
     tag: 'متوسطة',
@@ -70,6 +72,7 @@ export const ROADS = [
     name: 'طريق المحمودية',
     sub: 'على الترعة · شوارع وأحياء',
     curve: { a: 90, la: 400, b: 32, lb: 160 },
+    uturn: { first: 1000, step: 1400 },
     perKm: 20,
     flag: 10,
     tag: 'متوسطة',
@@ -99,6 +102,7 @@ export const ROADS = [
     name: 'الطريق السريع',
     sub: 'كارفور · الحديقة الدولية · محرم بك',
     curve: { a: 40, la: 900, b: 14, lb: 300 },
+    uturn: { first: 1800, step: 2400 },
     perKm: 15,
     flag: 10,
     tag: 'اقتصادية',
@@ -120,6 +124,7 @@ export const ROADS = [
     name: 'الطريق الصحراوى',
     sub: 'العامرية · المنطقة الحرة · طريق موظفين',
     curve: { a: 35, la: 1000, b: 12, lb: 320 },
+    uturn: { first: 2000, step: 2800 },
     perKm: 12,
     flag: 10,
     tag: 'رخيصة عشان الغلابة',
@@ -176,3 +181,31 @@ export const landmarkAfter = (road, s) => Math.max(0, Math.ceil((s - road.first)
 export const radarS = (road, k) => road.radar.first + k * road.radar.step;
 export const radarLimit = (road, k) => road.radar.limits[k % road.radar.limits.length];
 export const nextRadarIndex = (road, s) => Math.max(0, Math.ceil((s - road.radar.first) / road.radar.step));
+
+// ---- الدورانات (يو تيرن فى فتحة الجزيرة الوسطى) ----
+export const uturnS = (road, k) => road.uturn.first + k * road.uturn.step;
+export const nextUturnIndex = (road, s) => Math.max(0, Math.ceil((s - road.uturn.first) / road.uturn.step));
+export const hasUturn = (road) => !!road.uturn;
+
+// الطريق الراجع: نفس الطريق بس اتجاهه معكوس (المحطات بالعكس من آخر محطة عدّيتها)
+export function uturnRoad(road, s0) {
+  const L = road.landmarks;
+  const n = L.length;
+  let landmarks = L;
+  if (n) {
+    const kp = Math.floor((s0 - road.first) / road.spacing);
+    landmarks = L.map((_, j) => L[(((kp - j) % n) + n) % n]);
+  }
+  const base = road.base || road;
+  const back = !road.back;
+  return {
+    ...base,
+    base,
+    back,
+    name: back ? base.name + ' · رجوع' : base.name,
+    landmarks,
+    first: s0 + 420,
+    radar: { ...base.radar, first: s0 + 800 },
+    uturn: { ...base.uturn, first: s0 + 1400 },
+  };
+}

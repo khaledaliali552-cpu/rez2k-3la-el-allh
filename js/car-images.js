@@ -1,40 +1,37 @@
-// صور واقعية للمركبات فى كروت الجراج والإعداد والورشة (بتتحمّل لو الملف موجود، وإلا بنرجع للصورة المتولدة من المجسم 3D).
-// الصور فى assets/images/cars/realistic/  (WebP/PNG بخلفية شفافة). اللعبة نفسها 3D؛ صور المرور فى js/sprites.js.
+// مظاهر (ألوان) كل عربية: كلها صور. rear = صورة من ورا (اللى بتشوفها وانت سايق)، card = صورة الكارت فى الجراج والورشة.
+// لإضافة لون جديد لعربية: حط الصورتين فى assets/images/cars/realistic/ وسجلهم هنا ومعاهم قياسهم فى js/sprites.js.
 export const CAR_IMAGE_DIR = 'assets/images/cars/realistic/';
 
-// نوع المركبة -> { اللون: اسم الملف }.  اللون اللى مالوش صورة بيعرض المجسم 3D بنفس اللون.
-// لإضافة صور جديدة: حطها فى الفولدر وسجلها هنا (مثلا taxi: { yellow: 'taxi-yellow.webp' }).
-export const CAR_IMAGES = {
-  luxury: { black: 'lux-front-black.webp', blue: 'lux-front-blue.webp', yellow: 'lux-front-beige.webp', silver: 'lux-front-silver.webp', white: 'lux-front-white.webp' },
-  coupe: { black: 'bmw-front-black.webp', blue: 'bmw-front-blue.webp', silver: 'bmw-front-gray.webp', red: 'bmw-front-red.webp', white: 'bmw-front-white.webp' },
-  sedan: { yellow: 'sedan-rear3q-cream.webp', silver: 'corolla-silver-rear3q.webp', white: 'corolla-white-rear.webp', black: 'lancer-black-rear3q.webp' },
-  taxi: { white: 'taxi-front.webp' },
-  lada: { white: 'lada-front.webp' },
-  gwagon: { black: 'gwagon-front.webp' },
-  suv: { blue: 'suv-front.webp' },
-  moto: { red: 'moto-rear-red.webp', yellow: 'moto-rear-yellow.webp' },
+export const LOOKS = {
+  taxi: { def: 'white', looks: { white: { rear: 'taxi-verna-rear', card: 'taxi-verna-front' }, silver: { rear: 'lada-taxi-rear', card: 'lada-taxi-front' } } },
+  lada: { def: 'white', looks: { white: { rear: 'lada-rear', card: 'lada-front' } } },
+  moto: { def: 'red', looks: { red: { rear: 'moto-rear-red', card: 'moto-rear-red' }, yellow: { rear: 'moto-rear-yellow', card: 'moto-rear-yellow' } } },
+  hatch: { def: 'yellow', looks: { yellow: { rear: 'hatch-yellow-rear', card: 'hatch-yellow-front' } } },
+  sedan: { def: 'white', looks: {
+    white: { rear: 'corolla-white-rear', card: 'corolla-white-front' },
+    silver: { rear: 'corolla-silver-rear', card: 'corolla-silver-front' },
+    yellow: { rear: 'sedan-rear-cream', card: 'sedan-front-cream' },
+    black: { rear: 'lancer-black-rear', card: 'lancer-black-front' },
+  } },
+  microbus: { def: 'white', looks: { white: { rear: 'van-hiace-rear', card: 'van-hiace-front' } } },
+  tonaya: { def: 'white', looks: { white: { rear: 'van-white-rear', card: 'van-white-front' } } },
+  coupe: { def: 'red', looks: { red: { rear: 'ferrari-rear', card: 'ferrari-front' } } },
+  suv: { def: 'blue', looks: { blue: { rear: 'suv-rear', card: 'suv-front' }, green: { rear: 'jeep-rear', card: 'jeep-front' } } },
+  gwagon: { def: 'black', looks: { black: { rear: 'gwagon-rear', card: 'gwagon-front' } } },
+  // الفارهة: مفيش عندى صورة ضهر ليها لسه، فبستخدم صور سيدان قريبة لحد ما تبعتلى صورتها من ورا
+  luxury: { def: 'black', looks: {
+    black: { rear: 'lancer-black-rear', card: 'lux-front-black' },
+    white: { rear: 'byd-rear', card: 'lux-front-white' },
+    silver: { rear: 'corolla20-rear', card: 'lux-front-silver' },
+  } },
+  tuktuk: { def: 'red', looks: { red: { rear: 'tuktuk-red-rear', card: 'tuktuk-red-front' } } },
+  tuktuk2: { def: 'gold', looks: { gold: { rear: 'tuktuk-gold-rear', card: 'tuktuk-gold-front' } } },
 };
 
-const known = new Map(); // url -> true/false
-const probing = new Set();
-let onFound = null;
-export function setCarImageListener(fn) { onFound = fn; }
-
-function probe(url) {
-  if (known.has(url) || probing.has(url)) return;
-  probing.add(url);
-  const im = new Image();
-  im.onload = () => { probing.delete(url); known.set(url, true); if (onFound) onFound(); };
-  im.onerror = () => { probing.delete(url); known.set(url, false); };
-  im.src = url;
+export const defaultLook = (body) => (LOOKS[body] || LOOKS.sedan).def;
+export const lookIds = (body) => Object.keys((LOOKS[body] || LOOKS.sedan).looks);
+export function lookFor(body, colorId) {
+  const L = LOOKS[body] || LOOKS.sedan;
+  return L.looks[colorId] || L.looks[L.def];
 }
-
-// بيرجع رابط الصورة لو اتحمّلت، وإلا null (وبيبدأ يتأكد منها فى الخلفية)
-export function realisticCarImage(kind, colorId) {
-  const f = CAR_IMAGES[kind] && CAR_IMAGES[kind][colorId];
-  if (!f) return null;
-  const u = CAR_IMAGE_DIR + f;
-  if (known.get(u)) return u;
-  probe(u);
-  return null;
-}
+export const cardImage = (body, colorId) => CAR_IMAGE_DIR + lookFor(body, colorId).card + '.webp';

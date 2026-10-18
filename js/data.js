@@ -175,17 +175,35 @@ export const fmtTime = (sec) => {
 };
 
 // ---------- الورشة: الكلام والكماليات (الترويقة) ----------
-export const SLOGANS = [
-  'ماشى بالبركة', 'يا رب سترك', 'توكل على الله', 'الرزق على الله', 'خليك فى حالك',
-  'سواق جدع', 'ولا تحسدنى', 'اللى مش عاجبه يركب غيرى', 'مدد يا سيدة', 'اتأخرت؟ معلش الزحمة',
+export const STICKERS = [
+  { id: 'st01', text: 'يا حلوة يا شقية', aspect: 0.4885 },
+  { id: 'st02', text: 'محروسة من العين', aspect: 0.3962 },
+  { id: 'st03', text: 'صلى ع النبى', aspect: 0.475 },
+  { id: 'st04', text: 'على كف العفاريت', aspect: 0.4904 },
+  { id: 'st05', text: 'ربك المسهل', aspect: 0.3385 },
+  { id: 'st06', text: 'عين الحسود فيها عود', aspect: 0.5115 },
+  { id: 'st07', text: 'كله بيعدى', aspect: 0.4769 },
+  { id: 'st08', text: 'يا صبر أيوب', aspect: 0.3558 },
+  { id: 'st09', text: 'الله الحافظ', aspect: 0.4538 },
+  { id: 'st10', text: 'رزق الهبل ع المجانين', aspect: 0.2923 },
+  { id: 'st11', text: 'الحلوة عروسة عشان من العين محروسة', aspect: 0.2981 },
+  { id: 'st12', text: 'متبصلهاش من ورا وقدام دى جايه بدهب المدام', aspect: 0.5558 },
+  { id: 'st13', text: 'اللى فات مات واللى جاى أحلى', aspect: 0.4212 },
+  { id: 'st14', text: 'عيون الناس مش بتسيب جد فى جاله', aspect: 0.4596 },
+  { id: 'st15', text: 'مفيش صاحب يتعاشر', aspect: 0.2654 },
+  { id: 'st16', text: 'رضا الوالدين أهم', aspect: 0.5308 },
+  { id: 'st17', text: 'اوعى تركن على جنب طول ما فيه أمل', aspect: 0.4404 },
+  { id: 'st18', text: 'يا تهدى يا تعدى', aspect: 0.6519 },
+  { id: 'st19', text: 'عين الحسود فيها دود', aspect: 0.5 },
+  { id: 'st20', text: 'الحلوة من اسكندرية أحلى من مليون عربية', aspect: 0.0808 },
 ];
+export const stickerById = (id) => STICKERS.find((s) => s.id === id) || null;
 export const SLOGAN_PRICE = 150;
 // bonus = زيادة فى الأجرة لأن الراكب بيرتاح لما العربية متروقة
 export const ACCESSORIES = [
   { id: 'lift', name: 'تعلية', icon: '⬆️', price: 1500, bonus: 0.05, desc: 'تعلية للعربية من تحت، شكلها أعلى وأهيب' },
   { id: 'neon', name: 'نيون تحت العربية', icon: '💡', price: 800, bonus: 0.04, desc: 'إضاءة سماوى بتنوّر الأسفلت' },
   { id: 'bar', name: 'لمبات السقف', icon: '🚨', price: 600, bonus: 0.03, desc: 'شريط لمبات فوق الكابينة' },
-  { id: 'spoiler', name: 'جناح خلفى', icon: '🏁', price: 700, bonus: 0.03, desc: 'سبويلر على الشنطة (مش للتوك توك والنقل)' },
   { id: 'seats', name: 'فرش ونجف وبرفان', icon: '🛋️', price: 400, bonus: 0.04, desc: 'جوه العربية متروق، الراكب بيدّى أكتر' },
   { id: 'bead', name: 'خرزة زرقا ومصحف', icon: '🧿', img: 'assets/images/ui/evil-eye.webp', price: 150, bonus: 0.02, desc: 'ضد الحسد.. وبركة' },
 ];
@@ -193,7 +211,7 @@ export const SLOGAN_BONUS = 0.03;
 export const getAcc = (id) => ACCESSORIES.find((a) => a.id === id);
 export function modBonus(mods) {
   if (!mods) return 0;
-  let b = mods.slogan ? SLOGAN_BONUS : 0;
+  let b = stickerById(mods.slogan) ? SLOGAN_BONUS : 0;
   for (const id of mods.accs || []) b += (getAcc(id) || { bonus: 0 }).bonus;
   return b;
 }

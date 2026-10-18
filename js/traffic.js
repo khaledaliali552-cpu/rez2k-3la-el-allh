@@ -1,7 +1,6 @@
 // الزحمة: عربيات فى نفس اتجاهك (بتتصادم) وعربيات عكسية (للمنظر بس)
 import * as THREE from '../vendor/three.module.min.js';
-import { buildVehicle, SIZES } from './vehicles.js';
-import { models } from './models.js';
+import { SIZES } from './vehicles.js';
 import { hasSprite, buildSprite } from './sprites.js';
 import { LANE_X, ONC_X, place, headingYaw, dcx, trafficDensity } from './world.js';
 import { rand, pick, clamp, pickWeighted } from './data.js';
@@ -28,17 +27,17 @@ const VEH = {
 };
 const DEFAULT_MIX = { sedan: 4, taxi: 4, hatch: 2, microbus: 3, tuktuk: 1, truck: 1 };
 
-// صور المرور (لو متاحة للنوع ده)، وإلا المجسم 3D
+// كل عربيات المرور صور (مفيش مجسمات)
 function trafficModel(k, facing) {
-  if (hasSprite(k.kind, facing)) return buildSprite(k.kind, facing, SIZES[k.kind] || SIZES.sedan);
-  return buildVehicle(k.kind, pick(k.colors), k.accents ? { accent: pick(k.accents) } : {});
+  return buildSprite(k.kind, facing, SIZES[k.kind] || SIZES.sedan);
 }
 
 function pickKind(mix, noSlow = false) {
   const m = {};
-  for (const [k, w] of Object.entries(mix)) if (VEH[k] && (!noSlow || (k !== 'tuktuk' && k !== 'ambulance'))) m[k] = w;
+  const facing = noSlow ? 'front' : 'rear';
+  for (const [k, w] of Object.entries(mix)) if (VEH[k] && hasSprite(k, facing) && (!noSlow || (k !== 'tuktuk' && k !== 'ambulance'))) m[k] = w;
+  if (!Object.keys(m).length) m.sedan = 1;
   const kind = pickWeighted(m);
-  models.ensure(kind); // تحميل كسول لنموذج GLB لو موجود (مرة واحدة)
   return { kind, ...VEH[kind] };
 }
 

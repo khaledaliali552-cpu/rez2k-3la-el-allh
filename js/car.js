@@ -1,6 +1,6 @@
 // عربية اللاعب: فيزياء بسيطة بتحس بالعربية من غير تعقيد
 import * as THREE from '../vendor/three.module.min.js';
-import { buildVehicle } from './vehicles.js';
+import { buildPlayerSprite } from './sprites.js';
 import { place, headingYaw } from './world.js';
 import { clamp } from './data.js';
 
@@ -21,10 +21,10 @@ export class PlayerCar {
     this.reset();
   }
 
-  setSpec(spec, colorHex, mods) {
+  setSpec(spec, look, mods) {
     this.spec = spec;
     if (this.model) this.inner.remove(this.model.group);
-    this.model = buildVehicle(spec.body, colorHex, { wheels: true, mods });
+    this.model = buildPlayerSprite(spec.body, look, mods);
     this.inner.add(this.model.group);
     this.w = this.model.w;
     this.l = this.model.l;
@@ -119,8 +119,5 @@ export class PlayerCar {
     const pitch = clamp(this.accel * 0.004, -0.06, 0.05);
     this.inner.rotation.x = pitch;
     this.inner.rotation.z = clamp(this.vxS * 0.012, -0.07, 0.07);
-    if (this.model) {
-      for (const w of this.model.wheels) w.rotation.x -= (this.v * (dt || 0)) / w.userData.r;
-    }
   }
 }

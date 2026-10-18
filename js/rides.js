@@ -30,9 +30,9 @@ export function settleRide(ride, remaining, fareMul = 1) {
   return { fare, tip, stars, perfect, late, comfort };
 }
 
-// عداد الأجرة: فتح العداد + سعر الكيلو × الكيلومترات اللى اتقطعت فعلاً × عدد الأفراد
+// عداد الأجرة: (فتح العداد + سعر الكيلو للفرد × الكيلومترات اللى اتقطعت فعلاً) × عدد الأفراد
 export function meterFare(c, km = c.km) {
-  return c.free ? c.flag + c.perKm * km : (c.flag + c.perKm * km) * c.group;
+  return (c.flag + c.perKm * km) * c.group; // السعر لكل فرد، والمشوار بيتحسب على عدد الأفراد
 }
 
 export class Rides {
@@ -87,7 +87,7 @@ export class Rides {
       lm = { name: d.name };
       dist = d.dist;
       destS = pickupS + dist;
-      perKm = (d.fare / d.dist) * 1000; // سعر الكيلو (للعربية كلها)
+      perKm = ((d.fare / d.dist) * 1000) / group; // سعر الكيلو للفرد الواحد
       flag = 0;
       if (this.onDest) this.onDest(destS, d.name);
     } else {

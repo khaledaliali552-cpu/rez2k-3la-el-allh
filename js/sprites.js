@@ -1,5 +1,8 @@
 // عربيات المرور بصور (Sprites) بدل المجسمات: صور من ورا للعربيات اللى قدامك، ومن قدام للعربيات العكسية.
 import * as THREE from '../vendor/three.module.min.js';
+import { SIZES } from './vehicles.js';
+import { lookFor } from './car-images.js';
+import { stickerById } from './data.js';
 
 const DIR = 'assets/images/cars/realistic/';
 // [اسم الملف, العرض بالمتر (بالمرايا), نسبة الطول/العرض]
@@ -9,6 +12,8 @@ const S = {
   gwagonRear: [['gwagon-rear', 2.15, 0.9297]],
   ladaRear: [['lada-rear', 1.85, 0.81]],
   suvRear: [['suv-rear', 2.05, 0.8186], ['jeep-rear', 2.0, 0.8721]],
+  coupeRear: [['ferrari-rear', 1.95, 0.7909]],
+  luxRear: [['lancer-black-rear', 1.95, 0.7879], ['byd-rear', 2.0, 0.7963], ['corolla20-rear', 2.0, 0.8296]],
   taxiRear: [['taxi-verna-rear', 2.0, 0.8454], ['lada-taxi-rear', 1.85, 0.9482]],
   hatchRear: [['hatch-yellow-rear', 1.8, 0.8738]],
   busRear: [['bus-red-rear', 3.0, 0.986]],
@@ -21,6 +26,7 @@ const S = {
   luxFront: [['lux-front-black', 1.95, 0.7464], ['lux-front-blue', 1.95, 0.7464], ['lux-front-beige', 1.95, 0.7464], ['lux-front-silver', 1.95, 0.7464], ['lux-front-white', 1.95, 0.7464]],
   sedanFront: [['bmw-front-black', 1.98, 0.7683], ['bmw-front-blue', 1.98, 0.7683], ['bmw-front-gray', 1.98, 0.7683], ['bmw-front-red', 1.98, 0.7683], ['bmw-front-white', 1.98, 0.7683], ['sedan-front-cream', 1.95, 0.8089], ['sedan-front-silver', 1.95, 0.8089], ['corolla-silver-front', 2.0, 0.8053], ['corolla-white-front', 2.0, 0.8053], ['lancer-black-front', 1.95, 0.7862], ['corolla20-front', 2.0, 0.7639], ['mg-front', 2.0, 0.8097]],
   taxiFront: [['taxi-front', 2.0, 0.812], ['taxi-verna-front', 2.0, 0.8245], ['lada-taxi-front', 1.85, 0.932]],
+  coupeFront: [['ferrari-front', 1.95, 0.7622]],
   hatchFront: [['hatch-yellow-front', 1.8, 0.8159]],
   busFront: [['bus-red-front', 3.0, 0.9882]],
   vanFront: [['van-hiace-front', 1.95, 0.8513]],
@@ -32,10 +38,13 @@ const S = {
   ladaFront: [['lada-front', 1.85, 0.7988]],
   suvFront: [['suv-front', 2.05, 0.7617], ['jeep-front', 2.0, 0.875]],
 };
+export const IMG = {};
+for (const list of Object.values(S)) for (const [n, w, a] of list) IMG[n] = [w, a];
+
 // نوع المرور -> مجموعة الصور (rear = اتجاهك، front = عكسى)
 const MAP = {
-  rear: { sedan: 'sedanRear', pickup: 'pickupRear', gwagon: 'gwagonRear', lada: 'ladaRear', suv: 'suvRear', moto: 'moto', ambulance: 'ambulance', taxi: 'taxiRear', hatch: 'hatchRear', bus: 'busRear', microbus: 'vanRear', tonaya: 'tonayaRear', tuktuk: 'tuktukRear', tuktuk2: 'tuktuk2Rear' },
-  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront', hatch: 'hatchFront', bus: 'busFront', microbus: 'vanFront', tonaya: 'tonayaFront', tuktuk: 'tuktukFront', tuktuk2: 'tuktuk2Front', pickup: 'pickupFront' },
+  rear: { sedan: 'sedanRear', pickup: 'pickupRear', gwagon: 'gwagonRear', lada: 'ladaRear', suv: 'suvRear', moto: 'moto', ambulance: 'ambulance', coupe: 'coupeRear', luxury: 'luxRear', truck: 'pickupRear', boxtruck: 'pickupRear', taxi: 'taxiRear', hatch: 'hatchRear', bus: 'busRear', microbus: 'vanRear', tonaya: 'tonayaRear', tuktuk: 'tuktukRear', tuktuk2: 'tuktuk2Rear' },
+  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront', hatch: 'hatchFront', bus: 'busFront', microbus: 'vanFront', tonaya: 'tonayaFront', tuktuk: 'tuktukFront', tuktuk2: 'tuktuk2Front', pickup: 'pickupFront', coupe: 'coupeFront', truck: 'pickupFront', boxtruck: 'pickupFront' },
 };
 
 const loader = new THREE.TextureLoader();
@@ -86,7 +95,11 @@ export function buildSprite(kind, facing, size) {
   if (facing === 'front') plane.rotation.y = Math.PI; // العربية العكسية مقدمتها ناحية الكاميرا
   plane.renderOrder = 1;
   group.add(plane);
-  // ظل ملامس للأرض
+  group.add(contactShadow(w, size.l));
+  return { group, wheels: [], w: size.w, l: size.l, kind, sprite: true };
+}
+
+function contactShadow(w, l) {
   if (!shadowMat) {
     const c = document.createElement('canvas');
     c.width = c.height = 64;
@@ -100,8 +113,89 @@ export function buildSprite(kind, facing, size) {
     shadowGeo.rotateX(-Math.PI / 2);
   }
   const sh = new THREE.Mesh(shadowGeo, shadowMat);
-  sh.scale.set(w * 1.05, 1, size.l * 0.95);
+  sh.scale.set(w * 1.05, 1, l * 0.95);
   sh.position.y = 0.03;
-  group.add(sh);
-  return { group, wheels: [], w: size.w, l: size.l, kind, sprite: true };
+  return sh;
+}
+
+// ---------- عربية اللاعب (صورة من ورا + كماليات) ----------
+const stickerTex = new Map();
+function stickerMaterial(id) {
+  let m = stickerTex.get(id);
+  if (!m) {
+    const t = new THREE.TextureLoader().load('assets/images/stickers/' + id + '.webp');
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    m = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide });
+    m.color.setScalar(light);
+    stickerTex.set(id, m);
+  }
+  return m;
+}
+// ارتفاع الاستيكر على الزجاج الخلفى (نسبة من ارتفاع الصورة) وعرضه (نسبة من عرض العربية)
+export const STICKER_SPOT = {
+  sedan: [0.64, 0.62], taxi: [0.64, 0.6], hatch: [0.62, 0.62], coupe: [0.58, 0.5], suv: [0.64, 0.6], luxury: [0.64, 0.6],
+  microbus: [0.62, 0.7], tonaya: [0.6, 0.7], lada: [0.62, 0.6], gwagon: [0.64, 0.6], tuktuk: [0.52, 0.6], tuktuk2: [0.5, 0.6], moto: [0.5, 0.5],
+};
+let neonMat = null, barTex = null;
+export function setSpriteLightPlayer() {}
+
+export function buildPlayerSprite(body, colorId, mods) {
+  const look = lookFor(body, colorId);
+  const [w, aspect] = IMG[look.rear] || [1.9, 0.8];
+  const h = w * aspect;
+  const lift = mods && (mods.accs || []).includes('lift') ? 0.16 : 0;
+  const size = SIZES[body] || SIZES.sedan;
+  const group = new THREE.Group();
+  group.add(contactShadow(w, size.l));
+  if ((mods && (mods.accs || []).includes('neon'))) {
+    if (!neonMat) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 64;
+      const x = c.getContext('2d');
+      const gr = x.createRadialGradient(32, 32, 1, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(90,230,255,0.95)');
+      gr.addColorStop(1, 'rgba(90,230,255,0)');
+      x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+      neonMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    }
+    const n = new THREE.Mesh(shadowGeo, neonMat);
+    n.scale.set(w * 1.5, 1, size.l * 1.05);
+    n.position.y = 0.06;
+    group.add(n);
+  }
+  const body3 = new THREE.Group();
+  body3.position.y = lift;
+  group.add(body3);
+  let g = geos.get(w + ':' + h);
+  if (!g) { g = new THREE.PlaneGeometry(w, h); g.translate(0, h / 2, 0); geos.set(w + ':' + h, g); }
+  const plane = new THREE.Mesh(g, material(look.rear));
+  plane.renderOrder = 1;
+  body3.add(plane);
+  // استيكر الكلام على الزجاج الخلفى
+  const st = mods && mods.slogan ? stickerById(mods.slogan) : null;
+  if (st) {
+    const [fy, fw] = STICKER_SPOT[body] || [0.6, 0.6];
+    const sw = w * fw, sh = sw * st.aspect;
+    const sg = new THREE.PlaneGeometry(sw, sh);
+    const sp = new THREE.Mesh(sg, stickerMaterial(st.id));
+    sp.position.set(0, h * fy, 0.03);
+    sp.renderOrder = 2;
+    body3.add(sp);
+  }
+  // لمبات السقف
+  if (mods && (mods.accs || []).includes('bar')) {
+    if (!barTex) {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 16;
+      const x = c.getContext('2d');
+      for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#ff3b3b' : '#3b8bff'; x.fillRect(i * 16 + 2, 2, 12, 12); }
+      barTex = new THREE.CanvasTexture(c);
+    }
+    const bar = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.5, w * 0.5 * 0.125), new THREE.MeshBasicMaterial({ map: barTex, transparent: true }));
+    bar.position.set(0, h * 0.99, 0.03);
+    bar.renderOrder = 2;
+    body3.add(bar);
+  }
+  return { group, wheels: [], w: size.w, l: size.l, kind: body, sprite: true };
 }

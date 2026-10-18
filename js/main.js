@@ -1,21 +1,21 @@
 // الملف الرئيسى: بيربط العالم والعربية والركاب والواجهة
 import * as THREE from '../vendor/three.module.min.js';
-import { World, cx } from './world.js';
-import { ROADS, getRoad, radarS as roadRadarS, radarLimit as roadRadarLimit } from './roads.js';
+import { World, cx, UT_HALF } from './world.js';
+import { ROADS, getRoad, uturnS, nextUturnIndex, uturnRoad, nextRadarIndex, radarS as roadRadarS, radarLimit as roadRadarLimit } from './roads.js';
 import { boardLine, chatterLine, reactLine } from './dialog.js';
 import { Radio } from './radio.js';
 import { Cloud } from './cloud.js';
 import { PlayerCar } from './car.js';
 import { Traffic } from './traffic.js';
 import { Rides } from './rides.js';
+import { lookIds, defaultLook } from './car-images.js';
 import { Input } from './input.js';
 import { Sfx } from './sfx.js';
-import { models } from './models.js';
 import { UI } from './ui.js';
 import * as Save from './save.js';
 import {
   QUEST_POOL, ACHIEVEMENTS, SHIFT_SECONDS, RADAR_FINE, THEME_ORDER, WELCOME_BONUS,
-  getCar, getColor, colorKey, getAcc, SLOGAN_PRICE, modBonus, getBoss, getRentVehicle, pick, clamp, fmtMoney, fmtTime,
+  getCar, getColor, colorKey, getAcc, stickerById, SLOGAN_PRICE, modBonus, getBoss, getRentVehicle, pick, clamp, fmtMoney, fmtTime,
 } from './data.js';
 
 const GAME_NAME_LOCAL = 'أجرة الكورنيش';
@@ -168,16 +168,19 @@ class Game {
     if (this.mode === 'garage') this.ui.renderGarage();
   }
 
-  carColor(id) {
+  // اسم المظهر (اللون) المستخدم للعربية: لازم يكون من المظاهر اللى ليها صور
+  carLook(id) {
     const car = this.carSpec(id) || getCar('boss_taxi');
-    if (car.job) return getColor(car.job.colorId).hex;
-    if (car.rented) return 0xf2b21b;
-    const c = this.state.colors[id] || 'white';
-    return getColor(this.hasColor(id, c) ? c : 'white').hex;
+    const ids = lookIds(car.body);
+    if (car.job) return ids.includes(car.job.colorId) ? car.job.colorId : defaultLook(car.body);
+    if (car.rented) return defaultLook(car.body);
+    const c = this.state.colors[id];
+    return ids.includes(c) && this.hasColor(id, c) ? c : defaultLook(car.body);
   }
 
   hasColor(carId, colorId) {
-    return colorId === 'white' || this.state.ownedColors.includes(colorKey(carId, colorId));
+    const car = getCar(carId);
+    return (car && colorId === defaultLook(car.body)) || this.state.ownedColors.includes(colorKey(carId, colorId));
   }
 
   // ---------- كود الدعوة ----------
@@ -235,12 +238,7 @@ class Game {
 
   setPlayerCar(id) {
     const car = this.carSpec(id) || getCar('boss_taxi');
-    if (!models.has(car.body)) {
-      models.ensure(car.body).then((ok) => {
-        if (ok && this.player.spec && this.player.spec.body === car.body) this.setPlayerCar(id);
-      });
-    }
-    this.player.setSpec(car, this.carColor(id), this.state.owned.includes(id) ? this.state.mods[id] : null);
+    this.player.setSpec(car, this.carLook(id), this.state.owned.includes(id) ? this.state.mods[id] : null);
   }
 
   resize() {
@@ -426,7 +424,7 @@ class Game {
     st.money -= car.price;
     st.owned.push(id);
     st.selected = id;
-    st.colors[id] = st.colors[id] || 'white';
+    st.colors[id] = st.colors[id] || defaultLook(car.body);
     this.previewId = id;
     this.setPlayerCar(id);
     this.player.reset(40, 8.7);
@@ -502,17 +500,17 @@ class Game {
     this.refreshWs();
   }
 
-  wsSlogan(text) {
+  wsSlogan(stickerId) {
     const id = this.wsCar;
     const mods = (this.state.mods[id] = this.state.mods[id] || { slogan: '', accs: [] });
-    text = (text || '').trim().slice(0, 28);
-    if (text === mods.slogan) return;
-    if (!text) {
+    if (!stickerId || !stickerById(stickerId)) {
+      if (!mods.slogan) return;
       mods.slogan = '';
     } else {
+      if (stickerId === mods.slogan) return;
       if (!this._pay(SLOGAN_PRICE)) return;
-      mods.slogan = text;
-      this.ui.toast('✍️ الكلام اتكتب على العربية', 'gold');
+      mods.slogan = stickerId;
+      this.ui.toast('✍️ الاستيكر اتلزق على العربية', 'gold');
     }
     this.save();
     this.refreshWs();
@@ -938,6 +936,7 @@ class Game {
 
     for (const e of this.rides.update(dt, p, { shiftOver: s.over })) this.onRideEvent(e);
     this.updateRadar();
+    this.updateUturn(dt);
     this.checkQuestToasts();
 
     // نهاية الوردية
@@ -951,6 +950,57 @@ class Game {
     this.sfx.updateEngine(p.v, p.vmaxEff, inp.throttle);
     this.updateCamera(dt);
     this.updateHud();
+  }
+
+  // الدوران (يو تيرن) فى فتحة الجزيرة: ادخل الحارة الشمال وهدّى فتلف للطريق الراجع
+  updateUturn(dt) {
+    const road = this.road;
+    const p = this.player;
+    this.utHint = null;
+    this.utMsgCd = Math.max(0, (this.utMsgCd || 0) - dt);
+    if (!road.uturn || road.free || this.uturning) return;
+    const su = uturnS(road, nextUturnIndex(road, p.s - UT_HALF));
+    const ds = su - p.s;
+    const riding = this.rides.phase === 'riding';
+    if (ds > 0 && ds < 240) this.utHint = riding ? null : '↩ دوران قدامك: ادخل الحارة الشمال وهدّى عشان ترجع';
+    if (Math.abs(ds) < UT_HALF && p.x < -4.2) {
+      if (riding) {
+        if (this.utMsgCd <= 0) { this.ui.toast('الراكب معاك! مينفعش تلف وتسيبه', 'bad'); this.utMsgCd = 4; }
+      } else if (p.v * 3.6 > 45) {
+        this.utHint = 'هدّى! الدوران تحت 45 كم/س';
+      } else {
+        this.doUturn();
+      }
+    }
+  }
+
+  doUturn() {
+    this.uturning = true;
+    let f = document.getElementById('uturn-fade');
+    if (!f) {
+      f = document.createElement('div');
+      f.id = 'uturn-fade';
+      document.body.appendChild(f);
+    }
+    f.style.opacity = '1';
+    this.sfx.init();
+    setTimeout(() => {
+      const p = this.player;
+      const nr = uturnRoad(this.road, p.s);
+      this.road = nr;
+      this.world.setRoad(nr);
+      this.traffic.setRoad(nr);
+      this.rides.setRoad(nr);
+      this.traffic.reset(p.s);
+      this.rides.reset();
+      this.nextRadar = nextRadarIndex(nr, p.s);
+      p.x = 3.4;
+      p.vx = 0;
+      this.ui.setDay(this.state.day, nr);
+      this.ui.toast(nr.back ? '↩ لفّيت فى الدوران ورجعت على ' + nr.base.name : '↩ لفّيت تانى: كمّل فى الاتجاه الأصلى', 'gold');
+      f.style.opacity = '0';
+      setTimeout(() => { this.uturning = false; }, 600);
+    }, 280);
   }
 
   updateCamera(dt) {
@@ -1019,7 +1069,7 @@ class Game {
       card = {
         icon: c.type.icon,
         title: `${c.name} ← ${c.place}`,
-        sub: `${c.group > 1 ? c.group + ' أفراد · ' : ''}باقى ${Math.max(0, Math.round(ds))} م · ${rem >= 0 ? fmtTime(rem) : 'اتأخرت!'} · 🧮 ${c.km.toFixed(2)} كم = ${fmtMoney(Math.max(20, Math.round(c.baseFare / 5) * 5))} ج`,
+        sub: `${c.group > 1 ? c.group + ' أفراد · ' : ''}باقى ${Math.max(0, Math.round(ds))} م · ${rem >= 0 ? fmtTime(rem) : 'اتأخرت!'} · 🧮 ${c.km.toFixed(2)} كم × ${Math.round(c.perKm)} ج/فرد = ${fmtMoney(Math.max(20, Math.round(c.baseFare / 5) * 5))} ج`,
         bar: inZone ? r.holdT / 1.2 : rem / c.limit,
         barClass: inZone ? 'gold' : rem / c.limit < 0.25 ? 'warn' : '',
         line: rem >= 0 ? 'سوق بنعومة: البقشيش على قد الراحة والسرعة.' : 'الأجرة بتقل كل ما بتتأخر.',
@@ -1033,7 +1083,7 @@ class Game {
       card = { icon: '🔎', title: 'بدوّر على راكب…', sub: `كمّل سواقة على ${this.road.name}`, bar: 0, line: '' };
     }
     ui.setCard(card);
-    ui.setHint(hint);
+    ui.setHint(hint || this.utHint || null);
   }
 }
 
