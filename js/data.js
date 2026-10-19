@@ -94,7 +94,7 @@ export const CARS = [
     vmax: 30, accel: 4.2, brake: 13, handling: 0.6, repair: 70, fareMul: 1,
   },
   {
-    id: 'dababa', name: 'دبابة (بيك أب)', body: 'pickup', price: 55000, cap: 3, cat: 'private',
+    id: 'dababa', name: 'دبابة', body: 'pickup', price: 55000, cap: 3, cat: 'cargo',
     desc: 'بيك أب شغال وبتاع مشاوير. قوى وبيتحمل.',
     vmax: 40, accel: 6.0, brake: 16, handling: 0.92, repair: 32, fareMul: 1,
   },
@@ -260,3 +260,34 @@ export function modBonus(mods) {
   for (const id of mods.accs || []) b += (getAcc(id) || { bonus: 0 }).bonus;
   return b;
 }
+
+// أصوات الكلاكس (متولّدة بالكود). بتتشترى من الورشة
+export const HORNS = [
+  { id: 'classic', name: 'كلاكس عادى', price: 0, desc: 'الصوت الأصلى' },
+  { id: 'double', name: 'كلاكس مزدوج', price: 300, desc: 'نغمتين مع بعض، صوت عربيات الملاكى' },
+  { id: 'beep', name: 'بيب بيب', price: 400, desc: 'صفارتين سريعتين خفاف' },
+  { id: 'moto', name: 'كلاكس موتوسيكل', price: 500, desc: 'صوت حاد وصغير' },
+  { id: 'air', name: 'كلاكس هوا', price: 900, desc: 'تقيل زى عربيات النقل' },
+  { id: 'train', name: 'كلاكس قطر', price: 1500, desc: 'ثلاث نغمات تقيلة وطويلة' },
+  { id: 'melody', name: 'كلاكس لحن', price: 1200, desc: 'لحن حجاز قصير من تأليفى' },
+  { id: 'siren', name: 'سرينة', price: 1800, desc: 'علو ونزول، للمستعجل بس' },
+];
+export const getHorn = (id) => HORNS.find((h) => h.id === id) || HORNS[0];
+
+// ---------- أنواع الشغل ووقت اليوم ----------
+export const KINDS = [
+  { id: 'eat', icon: '🍞', name: 'تاكل عيش', desc: 'هتاخد عربيات من الملاكى عشان تركب ناس وتنزل أوبر وكريم', cats: ['private'] },
+  { id: 'taraf', icon: '🚕', name: 'طرف', desc: 'تركب ناس فى عربيات الأجرة', cats: ['hire'], rent: true },
+  { id: 'joy', icon: '🌴', name: 'حتة نزهة', desc: 'سواقة رايقة بالعربيات الملاكى من غير ركاب ولا وقت', cats: ['private'] },
+  { id: 'cargo', icon: '🚚', name: 'نقلة سريعة', desc: 'شغل بعربيات النقل', cats: ['cargo'] },
+  { id: 'khatafy', icon: '⚡', name: 'خطافى', desc: 'وصّل 3 أفراد لمسافات بعيدة بأجرة كبيرة (محتاج عربية بتشيل 3)', cats: ['private', 'hire', 'cargo'], free: true },
+  { id: 'race', icon: '🏁', name: 'سباق', desc: 'اختار عربيتين وتسابقوا على نفس الطريق', cats: ['private', 'hire', 'cargo', 'bike'], race: true },
+];
+export const getKind = (id) => KINDS.find((k) => k.id === id) || KINDS[1];
+export const TIMES = [
+  { id: 'dawn', icon: '🌄', name: 'بعد الفجر', desc: 'العربيات مش كتير', mul: 0.4, theme: 'dawn' },
+  { id: 'morning', icon: '☀️', name: 'الصبحية', desc: 'عربيات أكتر شوية بس مش زحمة أوى', mul: 0.85, theme: 'day' },
+  { id: 'asr', icon: '🌤️', name: 'عصرية', desc: 'زحمة جدا', mul: 1.8, theme: 'day' },
+  { id: 'maghrib', icon: '🌇', name: 'مغربية', desc: 'زحمة شوية', mul: 1.25, theme: 'sunset' },
+];
+export const getTime = (id) => TIMES.find((t) => t.id === id) || TIMES[1];

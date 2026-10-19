@@ -36,6 +36,10 @@ export const THEMES = {
     label: 'صباح', sky: 0x8fc8ef, fog: 0xcfe6f5, hemiSky: 0xdff1ff, hemiGround: 0xa0a090, hemiI: 1.6,
     sun: 0xfff2d6, sunI: 1.1, sunPos: [80, 120, -40], windows: 0.0, lamp: 0, sea: 0x2a86b8,
   },
+  dawn: {
+    label: 'فجر', sky: 0x8a9fcf, fog: 0xc3c8de, hemiSky: 0xd0d8f2, hemiGround: 0x80808c, hemiI: 1.15,
+    sun: 0xffc9a8, sunI: 0.6, sunPos: [-100, 30, -60], windows: 0.3, lamp: 0.35, sea: 0x4a6c93,
+  },
   sunset: {
     label: 'غروب', sky: 0xf0905a, fog: 0xf2b48a, hemiSky: 0xffd0a8, hemiGround: 0x7a6a62, hemiI: 1.3,
     sun: 0xffa060, sunI: 0.85, sunPos: [-120, 40, -80], windows: 0.4, lamp: 0.5, sea: 0x9a5f78,
@@ -734,19 +738,19 @@ export class World {
     const e = road.env;
     const L = {
       towers: [
-        { front: 27, jitter: 2, depth: [16, 22], len: [16, 26], floors: [8, 18], styles: ['apt', 'apt', 'glass', 'glass', 'imgA'], gap: 0.05, shops: true, tints },
-        { front: 58, jitter: 4, depth: [18, 26], len: [22, 34], floors: [14, 28], styles: ['glass', 'apt', 'glass'], gap: 0.3, shops: false, tints },
+        { front: 27, jitter: 2, depth: [16, 22], len: [16, 26], floors: [8, 18], styles: ['imgA', 'imgB', 'imgA', 'imgB', 'imgA'], gap: 0.05, shops: true, tints },
+        { front: 58, jitter: 4, depth: [18, 26], len: [22, 34], floors: [14, 28], styles: ['imgA', 'imgB', 'imgA'], gap: 0.3, shops: false, tints },
       ],
       old: [
-        { front: 27, jitter: 1, depth: [14, 18], len: [12, 20], floors: [4, 8], styles: ['old', 'old', 'old', 'apt', 'imgA', 'imgB'], gap: 0.06, shops: true, tints },
-        { front: 50, jitter: 3, depth: [16, 20], len: [16, 26], floors: [6, 11], styles: ['apt', 'old'], gap: 0.25, shops: false, tints },
+        { front: 27, jitter: 1, depth: [14, 18], len: [12, 20], floors: [4, 8], styles: ['imgA', 'imgB', 'imgA', 'imgB', 'imgA', 'imgB'], gap: 0.06, shops: true, tints },
+        { front: 50, jitter: 3, depth: [16, 20], len: [16, 26], floors: [6, 11], styles: ['imgA', 'imgB'], gap: 0.25, shops: false, tints },
       ],
       shops: [
-        { front: 26, jitter: 1, depth: [12, 16], len: [10, 16], floors: [2, 5], styles: ['apt', 'old', 'old', 'imgA', 'imgA', 'imgB'], gap: 0.12, shops: true, tints },
-        { front: 44, jitter: 3, depth: [14, 18], len: [14, 22], floors: [4, 8], styles: ['apt', 'old'], gap: 0.3, shops: false, tints },
+        { front: 26, jitter: 1, depth: [12, 16], len: [10, 16], floors: [2, 5], styles: ['imgA', 'imgB', 'imgA', 'imgA', 'imgA', 'imgB'], gap: 0.12, shops: true, tints },
+        { front: 44, jitter: 3, depth: [14, 18], len: [14, 22], floors: [4, 8], styles: ['imgA', 'imgB'], gap: 0.3, shops: false, tints },
       ],
       mixed: [
-        { front: 32, jitter: 5, depth: [14, 20], len: [14, 24], floors: [3, 8], styles: ['apt', 'glass', 'old', 'imgA', 'imgB'], gap: 0.4, shops: true, tints },
+        { front: 32, jitter: 5, depth: [14, 20], len: [14, 24], floors: [3, 8], styles: ['imgA', 'imgB', 'imgA', 'imgA', 'imgB'], gap: 0.4, shops: true, tints },
       ],
       industrial: [
         { front: 36, jitter: 6, depth: [20, 30], len: [24, 40], floors: [1, 1], styles: ['shed'], gap: 0.45, shops: false, tints },
@@ -754,11 +758,11 @@ export class World {
     };
     const R = {
       buildings: [
-        { front: 15.5, jitter: 1, depth: [14, 18], len: [12, 20], floors: [5, 10], styles: ['apt', 'apt', 'old', 'glass', 'imgA', 'imgA', 'imgB'], gap: 0.08, shops: true, tints },
-        { front: 40, jitter: 4, depth: [16, 22], len: [18, 28], floors: [8, 15], styles: ['apt', 'glass'], gap: 0.3, shops: false, tints },
+        { front: 15.5, jitter: 1, depth: [14, 18], len: [12, 20], floors: [5, 10], styles: ['imgA', 'imgB', 'imgA', 'imgB', 'imgA', 'imgA', 'imgB'], gap: 0.08, shops: true, tints },
+        { front: 40, jitter: 4, depth: [16, 22], len: [18, 28], floors: [8, 15], styles: ['imgA', 'imgB'], gap: 0.3, shops: false, tints },
       ],
       canal: [
-        { front: 25, jitter: 1, depth: [12, 16], len: [10, 16], floors: [3, 6], styles: ['apt', 'old', 'imgA', 'imgB'], gap: 0.14, shops: true, tints },
+        { front: 25, jitter: 1, depth: [12, 16], len: [10, 16], floors: [3, 6], styles: ['imgA', 'imgB', 'imgA', 'imgB'], gap: 0.14, shops: true, tints },
       ],
       sea: [],
       desert: [],

@@ -90,7 +90,7 @@
     <div class="topbar">
       <button class="btn round" id="g-back" aria-label="رجوع">➜</button>
       <div class="tabs" id="g-tabs">
-        <button data-tab="private">🚗 ملاكى</button><button data-tab="hire">🚕 أجرة</button><button data-tab="bike">🏍️ مكن</button>
+        <button data-tab="private">🚗 ملاكى</button><button data-tab="hire">🚕 أجرة</button><button data-tab="cargo">🚚 نقل</button><button data-tab="bike">🏍️ مكن</button>
       </div>
       <div class="pill" id="garage-money"></div>
       <button class="btn round" id="g-workshop" aria-label="الورشة">🔧</button>
@@ -103,11 +103,11 @@
 
   <!-- ========== الورشة ========== -->
   <section id="screen-workshop" class="screen full hidden">
-    <div class="stage" style="--ar:1.3274"><img class="stage-bg" src="assets/images/bg/workshop.webp" alt=""><div class="stage-car" id="ws-room" style="--cw:30%;--cb:7%"></div></div>
+    <img class="stage-fill" src="assets/images/bg/workshop.webp" alt=""><div class="stage" style="--ar:1.3274"><img class="stage-bg" src="assets/images/bg/workshop.webp" alt=""><div class="stage-car" id="ws-room" style="--cw:30%;--cb:7%"></div></div>
     <div class="topbar">
       <button class="btn round" id="w-back" aria-label="رجوع">➜</button>
       <div class="tabs" id="ws-tabs">
-        <button data-wt="fix">🔧 التصليح</button><button data-wt="acc">✨ الكماليات</button><button data-wt="stk">✍️ استيكر</button>
+        <button data-wt="fix">🔧 التصليح</button><button data-wt="acc">✨ الكماليات</button><button data-wt="stk">✍️ استيكر</button><button data-wt="horn">🎺 كلاكس</button>
       </div>
       <div class="pill" id="ws-money"></div>
     </div>
@@ -142,6 +142,7 @@
         </div></div>
       <label class="set"><span>حساسية الدريكسيون</span><input type="range" id="s-steer" min="0.6" max="1.5" step="0.05"></label>
       <label class="set"><span>قوة الفرامل</span><input type="range" id="s-brake" min="0.6" max="1.4" step="0.05"></label>
+      <div id="s-tester" class="hidden"><p class="foot">🧪 وضع التجربة (ظاهر ليك انت بس)</p><button class="btn" id="s-unlock">افتح كل العربيات والألوان للتجربة</button></div>
       <button class="btn danger" id="s-reset">مسح التقدم والبدء من الأول</button>
       <button class="btn" id="s-back">رجوع</button>
     </div>
@@ -198,7 +199,7 @@
   <!-- ========== اختيار الطريق ========== -->
   <section id="screen-roads" class="screen hidden">
     <div class="panel wide">
-      <div class="panel-head"><h2>جهّز وردتك</h2><div class="pill" id="roads-money"></div></div>
+      <div class="panel-head"><h2 id="setup-title">جهّز وردتك</h2><div class="pill" id="roads-money"></div></div>
       <div id="setup-body" class="setup"></div>
       <div class="row sticky">
         <button class="btn primary" id="setup-go">ابدأ</button>

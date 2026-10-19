@@ -121,7 +121,7 @@ export class Traffic {
     const noPlayer = !!opts.noPlayer;
     const events = [];
     const ps = player.s;
-    const dens = trafficDensity(ps) * this.density;
+    const dens = trafficDensity(ps) * this.density * (this.timeMul || 1);
 
     // إنشاء وحذف
     const want = Math.round(6 + 14 * dens);

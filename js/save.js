@@ -17,9 +17,11 @@ export const defaults = () => ({
   colors: {},
   ownedColors: [], // مثال: "sedan:black"
   selectedRoad: 'abuqir',
-  work: { boss: 'b_shokry', vehicle: 'r_taxi', mode: 'shift' },
+  work: { boss: 'b_shokry', vehicle: 'r_taxi', mode: 'shift', kind: 'taraf', time: 'morning' },
   damage: {},
   mods: {},
+  horns: ['classic'],
+  horn: 'classic',
   roadsPlayed: {},
   refCode: makeCode(),
   referredBy: '',

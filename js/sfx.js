@@ -66,9 +66,18 @@ export class Sfx {
     o.stop(t0 + dur + 0.02);
   }
 
-  horn() {
-    this._tone(420, 0.32, 'square', 0.12);
-    this._tone(530, 0.32, 'square', 0.1);
+  horn(id = 'classic') {
+    const T = (f, d, type, v, slide) => this._tone(f, d, type, v, 0, slide || null);
+    switch (id) {
+      case 'double': T(392, 0.45, 'sawtooth', 0.08); T(494, 0.45, 'sawtooth', 0.07); T(587, 0.45, 'square', 0.04); break;
+      case 'beep': T(880, 0.1, 'square', 0.1); setTimeout(() => T(1100, 0.14, 'square', 0.1), 150); break;
+      case 'moto': T(1250, 0.22, 'square', 0.09, 1050); break;
+      case 'air': T(150, 0.9, 'sawtooth', 0.12); T(190, 0.9, 'sawtooth', 0.1); T(75, 0.9, 'square', 0.05); break;
+      case 'train': T(311, 1.1, 'sawtooth', 0.08); T(370, 1.1, 'sawtooth', 0.08); T(466, 1.1, 'sawtooth', 0.07); T(155, 1.1, 'square', 0.04); break;
+      case 'melody': [293.66, 311.13, 369.99, 392, 440].forEach((f, i) => setTimeout(() => T(f, i === 4 ? 0.4 : 0.14, 'square', 0.09), i * 130)); break;
+      case 'siren': T(700, 0.4, 'sawtooth', 0.08, 1300); setTimeout(() => T(1300, 0.4, 'sawtooth', 0.08, 700), 400); break;
+      default: T(420, 0.32, 'square', 0.12); T(530, 0.32, 'square', 0.1);
+    }
   }
 
   crash() {

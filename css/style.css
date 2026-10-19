@@ -304,12 +304,10 @@ body.touch-mode .dmg { width: 84px; }
 /* ---------- خلفية الورشة ---------- */
 #screen-workshop { background: #1b1d22; }
 #screen-workshop .panel { position: relative; z-index: 2; }
-#ws-room { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
 .wr-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wr-car { position: absolute; right: 7vw; bottom: 9vh; width: min(34vw, 440px); display: none; }
 @media (min-width: 900px) { .wr-car { display: block; } }
 .wr-body { position: relative; width: 100%; transition: transform .3s; }
-.wr-body > img:first-child { width: 100%; display: block; filter: drop-shadow(0 14px 8px rgba(0,0,0,.55)); }
 .wr-stk { position: absolute; left: 50%; transform: translateX(-50%); }
 .wr-bar { position: absolute; left: 25%; width: 50%; top: -1%; height: 5%; background: repeating-linear-gradient(90deg,#3b8bff 0 12.5%,#ff3b3b 12.5% 25%); border-radius: 3px; }
 .wr-neon { position: absolute; left: -12%; right: -12%; bottom: -10%; height: 26%; background: radial-gradient(ellipse at center, rgba(90,230,255,.85), rgba(90,230,255,0) 70%); }
@@ -398,3 +396,26 @@ body.touch-mode .hud-bottom { left: 50%; transform: translateX(-50%); bottom: ca
 .ctl-opts button.on { background: var(--accent); color: #1b1503; font-weight: 800; border-color: transparent; }
 @media (orientation: portrait) { .t-right { position: absolute; } .t-right #t-horn { position: absolute; right: 0; bottom: 118px; } body[data-ctl="stick"] .t-right #t-horn { bottom: 0; } .tbtn.arrow { width: 70px; } }
 @media (orientation: portrait) { body[data-ctl="stick"] .t-right #t-horn { right: auto; left: 0; } }
+
+/* نيون من حواف العربية + ورشة تتعرض كاملة */
+.screen.full .wr-body > img.wr-main { width: 100%; display: block; position: relative; filter: drop-shadow(0 14px 8px rgba(0,0,0,.55)); }
+.wr-neon-img { position: absolute; inset: -5% -6% -9% -6%; width: 112%; height: 114%; max-width: none; transform: translateY(2%); pointer-events: none;
+  filter: brightness(0) saturate(100%) invert(80%) sepia(80%) saturate(1800%) hue-rotate(140deg) blur(6px) brightness(1.5);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 50%, #000 92%); mask-image: linear-gradient(to bottom, transparent 50%, #000 92%); opacity: .95; }
+#screen-workshop { background: #1b1d22; }
+#screen-workshop .stage-fill { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: cover; filter: blur(22px) brightness(.55); }
+#screen-workshop .stage { width: min(100vw, calc(100vh * var(--ar))); top: 56px; transform: translateX(-50%); }
+#screen-workshop .stage-car { bottom: var(--cb); width: var(--cw); }
+@media (max-height: 520px) { #screen-workshop .stage { left: calc((100vw - 300px) / 2); top: 50px; width: min(calc(100vw - 300px), calc((100vh - 50px) * var(--ar))); } #screen-workshop .stage-car { margin-left: 0; } }
+
+/* ---------- تدفق حجز الوردية ---------- */
+.opts.cars3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.opts.cars3 .opt { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px; gap: 3px; min-width: 0; }
+.opts.cars3 .othumb { width: 100%; height: 64px; object-fit: contain; }
+.opts.cars3 .opt b { font-size: 13px; } .opts.cars3 .opt small { font-size: 11px; }
+.opts.kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opts.kinds .opt { padding: 16px 10px; text-align: center; min-height: 110px; } .opts.kinds .opt b { font-size: 18px; }
+.opts.times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 420px) { .opts.kinds { gap: 8px; } .opts.kinds .opt b { font-size: 16px; } }
+.ws-horns .item .row { flex: none; flex-wrap: nowrap; } .ws-horns .item .btn { flex: 0 0 auto; padding: 8px 12px; font-size: 14px; }
+.screen.full .ws-car img { height: 44px; object-fit: contain; }

@@ -1,10 +1,71 @@
 // الراديو: أغانى mp3 من فولدر audio + إيقاع شعبى متولّد بالكود
-const GEN = { title: '🎹 إيقاع شعبى (متولّد بالكود)', gen: true };
+// أغانى متولّدة بالكود (ألحان وإيقاعات من تأليفى، مفيش أى أغنية حقيقية)
+// الإيقاعات: 16 خطوة. x = ضربة، . = سكوت. اللحن بيتولد من النغمات المسموحة (scale) بنفس البذرة فى كل مرة.
+const HIJAZ = [0, 1, 4, 5, 7, 8, 11];
+const MINOR = [0, 2, 3, 5, 7, 8, 10];
+const PENTA_MIN = [0, 3, 5, 7, 10];
+const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+const PENTA_MAJ = [0, 2, 4, 7, 9];
+const KURD = [0, 1, 3, 5, 7, 8, 10];
+const STYLES = [
+  { title: '🎹 إيقاع شعبى (حجاز)', bpm: 108, root: 146.83, scale: HIJAZ, seed: 11, wave: 'sawtooth', cut: 1800, vol: 0.16, len: 2.2,
+    kick: 'x..x....x..x....', snare: '....x.......x...', tak: '......xx......xx', hat: 'x.x.x.x.x.x.x.x.', bass: '0..2....0..3....', dens: 0.7 },
+  { title: '🔥 مهرجان الكورنيش', bpm: 128, root: 130.81, scale: PENTA_MIN, seed: 23, wave: 'square', cut: 2600, vol: 0.12, len: 1.2,
+    kick: 'x..x..x.x..x..x.', snare: '....x.......x..x', tak: 'x.x.x.x.x.x.x.xx', hat: '..x...x...x...x.', bass: '0..0..2.0..0..3.', dens: 0.6 },
+  { title: '🌅 حنين على البحر', bpm: 76, root: 164.81, scale: MINOR, seed: 5, wave: 'triangle', cut: 1400, vol: 0.2, len: 3.5, pad: true,
+    kick: 'x.......x.......', snare: '........x.......', tak: '', hat: 'x...x...x...x...', bass: '0.......3.......', dens: 0.5 },
+  { title: '🎻 سهرة إسكندرانى', bpm: 96, root: 146.83, scale: HIJAZ, seed: 37, wave: 'sawtooth', cut: 2200, vol: 0.14, len: 2.6,
+    kick: 'x..x..x.x.......', snare: '....x.......x...', tak: '..x...x...x...x.', hat: 'x.x.x.x.x.x.x.x.', bass: '0..0..2.3..2....', dens: 0.8 },
+  { title: '☀️ صباحية رايقة', bpm: 92, root: 196.0, scale: PENTA_MAJ, seed: 8, wave: 'triangle', cut: 2800, vol: 0.2, len: 2.5, pad: true,
+    kick: 'x...x...x...x...', snare: '....x.......x...', tak: '', hat: 'x.x.x.x.x.x.x.x.', bass: '0...2...3...2...', dens: 0.65 },
+  { title: '🌙 ليل رايق (لوفاى)', bpm: 68, root: 110.0, scale: MINOR, seed: 51, wave: 'sine', cut: 1200, vol: 0.24, len: 3.8, pad: true,
+    kick: 'x.....x.x.......', snare: '........x.......', tak: '', hat: '..x...x...x...x.', bass: '0.....2.3.......', dens: 0.45 },
+  { title: '🏁 سباق على الجسر', bpm: 150, root: 146.83, scale: KURD, seed: 64, wave: 'sawtooth', cut: 3200, vol: 0.12, len: 1.4,
+    kick: 'x...x...x...x..x', snare: '....x.......x...', tak: 'x.x.x.x.x.x.x.x.', hat: 'xxxxxxxxxxxxxxxx', bass: '0.0.0.0.2.2.3.3.', dens: 0.85 },
+  { title: '🥁 دُبكة وطرب', bpm: 120, root: 155.56, scale: HIJAZ, seed: 77, wave: 'square', cut: 2000, vol: 0.1, len: 1.8,
+    kick: 'x.....x.x...x...', snare: '..x...x...x...x.', tak: '.x...x...x...x..', hat: 'x.x.x.x.x.x.x.x.', bass: '0.....2.0...3...', dens: 0.75 },
+  { title: '🌴 ساحل وصيف', bpm: 104, root: 174.61, scale: MAJOR, seed: 91, wave: 'triangle', cut: 3000, vol: 0.2, len: 2.0,
+    kick: 'x..x..x...x...x.', snare: '....x.......x...', tak: '..x.....x.......', hat: 'x.x.x.x.x.x.x.x.', bass: '0..3..4...3.....', dens: 0.7 },
+  { title: '🚖 تاكسى بعد نص الليل', bpm: 84, root: 123.47, scale: KURD, seed: 103, wave: 'sawtooth', cut: 1500, vol: 0.14, len: 3.0, pad: true,
+    kick: 'x..x....x.......', snare: '....x.......x...', tak: '......x.......x.', hat: 'x.x.x.x.x.x.x.x.', bass: '0..0....2.......', dens: 0.55 },
+];
+const GENS = STYLES.map((st) => ({ title: st.title + ' · متولّدة', gen: true, style: st }));
+
+function rngFor(seed) {
+  let a = seed | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// لحن من جملتين (32 خطوة): مقطع A يتكرر بتنويع، وبعده مقطع B ثم A
+function makeMelody(st) {
+  const r = rngFor(st.seed);
+  const n = st.scale.length;
+  const motif = (len, start) => {
+    const out = [];
+    let d = start;
+    for (let i = 0; i < len; i++) {
+      if (r() > st.dens) { out.push(-1); continue; }
+      d = Math.max(0, Math.min(n + 2, d + Math.round((r() - 0.5) * 4)));
+      out.push(d);
+    }
+    return out;
+  };
+  const A = motif(8, Math.floor(n / 2));
+  const B = motif(8, Math.floor(n / 2) + 1);
+  const A2 = A.map((x, i) => (i === 7 && x >= 0 ? Math.max(0, x - 1) : x));
+  return [...A, ...A2, ...B, ...A];
+}
+
 
 export class Radio {
   constructor(settings) {
     this.settings = settings;
-    this.tracks = [GEN];
+    this.tracks = [...GENS];
     this.idx = -1; // -1 = مقفول
     this.playing = false;
     this.audio = null;
@@ -21,7 +82,7 @@ export class Radio {
       const list = await r.json();
       if (Array.isArray(list)) {
         const mp3 = list.filter((t) => t && t.file).map((t) => ({ title: '🎵 ' + (t.title || t.file), file: t.file }));
-        this.tracks = [...mp3, GEN];
+        this.tracks = [...mp3, ...GENS];
       }
     } catch (e) {
       /* مفيش playlist، هنكمل بالإيقاع المتولّد */
@@ -50,7 +111,7 @@ export class Radio {
     const t = this.current;
     this.settings.radioTrack = this.idx;
     this.settings.radio = true;
-    if (t.gen) this._startGen();
+    if (t.gen) this._startGen(t.style);
     else this._startFile(t);
     this.playing = true;
     this.onChange && this.onChange();
@@ -110,7 +171,7 @@ export class Radio {
   }
 
   // ---------- الإيقاع المتولّد (مقسوم 8/4 شعبى بمقام حجاز) ----------
-  _startGen() {
+  _startGen(style) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     if (!this.ctx) {
@@ -126,7 +187,9 @@ export class Radio {
     this.master.gain.value = this.volume * 0.9;
     this.step = 0;
     this.nextT = this.ctx.currentTime + 0.1;
-    this.bpm = 108;
+    this.style = style || STYLES[0];
+    this.bpm = this.style.bpm;
+    this.mel = makeMelody(this.style);
     if (this.timer) clearInterval(this.timer);
     this.timer = setInterval(() => this._schedule(), 30);
   }
@@ -194,21 +257,25 @@ export class Radio {
   }
 
   _playStep(i, t) {
+    const st = this.style;
     const k = i % 16;
-    // دُم (كيك) وتَك وكلاب
-    if ([0, 3, 8, 11].includes(k)) this._kick(t);
-    if ([4, 12].includes(k)) this._noiseHit(t, 1800, 0.14, 0.5); // كلاب/سناير
-    if ([6, 7, 14, 15].includes(k)) this._noiseHit(t, 5200, 0.05, 0.25, 'highpass'); // تَك
-    if (k % 2 === 0) this._noiseHit(t, 8500, 0.03, 0.12, 'highpass'); // هاى هات
-    // لحن بمقام حجاز على ر: ر، مي♭، فا#، صول، لا، سي♭، دو#
-    const D = 146.83;
-    const R = [1, 1.0595 ** 1, 1.0595 ** 4, 1.0595 ** 5, 1.0595 ** 7, 1.0595 ** 8, 1.0595 ** 11, 2];
-    const lead1 = [3, -1, 4, -1, 3, 2, 1, 0, 3, -1, 4, 5, 4, 3, 2, 1];
-    const lead2 = [0, -1, 2, 3, 4, -1, 3, 2, 1, 2, 3, -1, 2, 1, 0, -1];
-    const phrase = Math.floor(i / 16) % 2 ? lead2 : lead1;
-    const n = phrase[k];
-    if (n >= 0) this._tone(t, D * 2 * R[n], 0.28, 0.16, 'sawtooth', 1800);
-    // بيز
-    if ([0, 3, 8, 11].includes(k)) this._tone(t, D / 2 * (k >= 8 ? R[3] : 1), 0.3, 0.3, 'triangle', 500);
+    const on = (pat) => pat && pat[k] === 'x';
+    const swing = st.bpm < 100 ? 0.012 * (k % 2) : 0;
+    t += swing;
+    if (on(st.kick)) this._kick(t);
+    if (on(st.snare)) this._noiseHit(t, 1800, 0.14, 0.5);
+    if (on(st.tak)) this._noiseHit(t, 5200, 0.05, 0.25, 'highpass');
+    if (on(st.hat)) this._noiseHit(t, 8500, 0.03, 0.12, 'highpass');
+    const sc = st.scale;
+    const freq = (deg, oct) => st.root * oct * 2 ** ((sc[deg % sc.length] + 12 * Math.floor(deg / sc.length)) / 12);
+    const dur = (60 / st.bpm / 4) * st.len;
+    const n = this.mel[i % 32];
+    if (n >= 0) this._tone(t, freq(n, 2), dur, st.vol, st.wave, st.cut);
+    const b = st.bass[k];
+    if (b && b !== '.') this._tone(t, freq(+b, 0.5), dur * 1.4, 0.3, 'triangle', 500);
+    if (st.pad && (k === 0 || k === 8)) {
+      const base = Math.floor(i / 8) % 2 ? 3 : 0;
+      for (const d of [0, 2, 4]) this._tone(t, freq(base + d, 1), dur * 7, 0.07, 'sine', 900);
+    }
   }
 }

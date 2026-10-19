@@ -139,7 +139,43 @@ export const STICKER_SPOT = {
   microbus: [0.62, 0.7], tonaya: [0.6, 0.7], lada: [0.62, 0.6], gwagon: [0.64, 0.6], tuktuk: [0.52, 0.6], tuktuk2: [0.5, 0.6], moto: [0.5, 0.5],
   pickup: [0.7, 0.55], bus: [0.55, 0.6], benelli: [0.4, 0.4], daiwa: [0.4, 0.4], harley: [0.4, 0.4], hojen: [0.4, 0.4], vespa: [0.4, 0.4],
 };
-let neonMat = null, barTex = null;
+export const NOGLASS = new Set(['moto', 'benelli', 'daiwa', 'harley', 'hojen', 'vespa']); // مفيش زجاج خلفى
+let barTex = null;
+
+// نيون من حواف العربية من تحت: بنعمل ظل ملون بلون العربية (من الصورة نفسها) ونفرده ونخليه يظهر من تحت بس
+const neonMats = new Map();
+const NEON_PAD = 0.14;
+function neonMaterial(name) {
+  let m = neonMats.get(name);
+  if (m) return m;
+  const cv = document.createElement('canvas');
+  m = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, visible: false });
+  const img = new Image();
+  img.onload = () => {
+    const W = 320, H = Math.round(W * img.height / img.width);
+    const pw = Math.round(W * NEON_PAD), ph = Math.round(H * NEON_PAD);
+    cv.width = W + pw * 2; cv.height = H + ph * 2;
+    const x = cv.getContext('2d');
+    const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+    const tx = t.getContext('2d');
+    tx.drawImage(img, pw, ph, W, H);
+    tx.globalCompositeOperation = 'source-in';
+    tx.fillStyle = '#4de8ff'; tx.fillRect(0, 0, t.width, t.height);
+    x.filter = 'blur(13px)'; x.drawImage(t, 0, 0); x.filter = 'blur(5px)'; x.drawImage(t, 0, 0); x.filter = 'none';
+    x.globalCompositeOperation = 'destination-in';
+    const gr = x.createLinearGradient(0, ph + H * 0.5, 0, ph + H * 1.02);
+    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.8)'); gr.addColorStop(1, 'rgba(0,0,0,1)');
+    x.fillStyle = gr; x.fillRect(0, 0, cv.width, cv.height);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    m.map = tex;
+    m.visible = true;
+    m.needsUpdate = true;
+  };
+  img.src = DIR + name + '.webp';
+  neonMats.set(name, m);
+  return m;
+}
 export function setSpriteLightPlayer() {}
 
 export function buildPlayerSprite(body, colorId, mods) {
@@ -150,22 +186,6 @@ export function buildPlayerSprite(body, colorId, mods) {
   const size = SIZES[body] || SIZES.sedan;
   const group = new THREE.Group();
   group.add(contactShadow(w, size.l));
-  if ((mods && (mods.accs || []).includes('neon'))) {
-    if (!neonMat) {
-      const c = document.createElement('canvas');
-      c.width = c.height = 64;
-      const x = c.getContext('2d');
-      const gr = x.createRadialGradient(32, 32, 1, 32, 32, 32);
-      gr.addColorStop(0, 'rgba(90,230,255,0.95)');
-      gr.addColorStop(1, 'rgba(90,230,255,0)');
-      x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
-      neonMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-    }
-    const n = new THREE.Mesh(shadowGeo, neonMat);
-    n.scale.set(w * 1.5, 1, size.l * 1.05);
-    n.position.y = 0.06;
-    group.add(n);
-  }
   const body3 = new THREE.Group();
   body3.position.y = lift;
   group.add(body3);
@@ -174,8 +194,16 @@ export function buildPlayerSprite(body, colorId, mods) {
   const plane = new THREE.Mesh(g, material(look.rear));
   plane.renderOrder = 1;
   body3.add(plane);
+  if (mods && (mods.accs || []).includes('neon')) {
+    const ng = new THREE.PlaneGeometry(w * (1 + 2 * NEON_PAD), h * (1 + 2 * NEON_PAD));
+    ng.translate(0, h / 2, 0);
+    const n = new THREE.Mesh(ng, neonMaterial(look.rear));
+    n.position.z = -0.02;
+    n.renderOrder = 0;
+    body3.add(n);
+  }
   // استيكر الكلام على الزجاج الخلفى
-  const st = mods && mods.slogan ? stickerById(mods.slogan) : null;
+  const st = mods && mods.slogan && !NOGLASS.has(body) ? stickerById(mods.slogan) : null;
   if (st) {
     const [fy, fw] = STICKER_SPOT[body] || [0.6, 0.6];
     const sw = w * fw, sh = sw * st.aspect;

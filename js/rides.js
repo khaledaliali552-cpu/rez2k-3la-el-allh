@@ -30,11 +30,6 @@ export function settleRide(ride, remaining, fareMul = 1) {
   return { fare, tip, stars, perfect, late, comfort };
 }
 
-// عداد الأجرة: (فتح العداد + سعر الكيلو للفرد × الكيلومترات اللى اتقطعت فعلاً) × عدد الأفراد
-export function meterFare(c, km = c.km) {
-  return (c.flag + c.perKm * km) * c.group; // السعر لكل فرد، والمشوار بيتحسب على عدد الأفراد
-}
-
 export class Rides {
   constructor(scene) {
     this.scene = scene;
@@ -77,7 +72,7 @@ export class Rides {
     let group = +pickWeighted(gw);
     const gap = rand(280, 520);
     const pickupS = playerS + gap;
-    let destS, dist, lm, perKm, flag;
+    let destS, dist, lm, baseFare;
     if (road.free) {
       // شغل حر: 3 أفراد، وجهة بعيدة بأجرة ثابتة
       group = Math.min(3, Math.max(1, cap));
@@ -87,8 +82,7 @@ export class Rides {
       lm = { name: d.name };
       dist = d.dist;
       destS = pickupS + dist;
-      perKm = ((d.fare / d.dist) * 1000) / group; // سعر الكيلو للفرد الواحد
-      flag = 0;
+      baseFare = d.fare;
       if (this.onDest) this.onDest(destS, d.name);
     } else {
       // أول محطة بعد الراكب بمسافة معقولة، وممكن نتخطى واحدة
@@ -97,15 +91,13 @@ export class Rides {
       destS = landmarkS(road, k);
       dist = destS - pickupS;
       lm = landmarkAt(road, k);
-      perKm = road.perKm;
-      flag = road.flag || 0;
+      baseFare = road.fare * group; // الأجرة للفرد × عدد الأفراد
     }
     const limit = dist / (14 + 3 * type.impatience) + 12;
     this.cur = {
       type, name: pick(type.names), group, place: lm.name, landmarkLines: lm.lines || null, free: !!road.free,
-      pickupS, destS, dist, perKm, flag, km: 0, limit, hardBrakes: 0, swerves: 0, crashes: 0,
+      pickupS, destS, dist, baseFare, km: 0, limit, hardBrakes: 0, swerves: 0, crashes: 0,
     };
-    this.cur.baseFare = meterFare(this.cur, dist / 1000); // تقدير الأجرة للمسافة المتوقعة
     this.remaining = limit;
     this._clearMeshes();
     this.person = buildPerson(type.shirt, group);
@@ -127,6 +119,7 @@ export class Rides {
 
   // بترجع قايمة أحداث للّعبة تتصرف فيها
   update(dt, player, ctx) {
+    if (this.disabled) return [];
     const events = [];
     this.time += dt;
     const c = this.cur;
@@ -181,7 +174,6 @@ export class Rides {
       this.remaining -= dt;
       this.chatT -= dt;
       c.km = Math.max(c.km, (player.s - c.pickupS) / 1000);
-      c.baseFare = meterFare(c);
       if (this.chatT <= 0) {
         this.chatT = rand(18, 30);
         events.push({ type: 'chatter', ride: c });
@@ -203,8 +195,7 @@ export class Rides {
       else this.holdT = Math.max(0, this.holdT - dt * 2);
       if (this.holdT >= 1.2) {
         c.km = Math.max(c.km, (player.s - c.pickupS) / 1000);
-        c.baseFare = meterFare(c);
-        const res = settleRide(c, this.remaining, player.spec.fareMul);
+          const res = settleRide(c, this.remaining, player.spec.fareMul);
         this._clearMeshes();
         this.phase = 'idle';
         this.idleT = 1.2;
