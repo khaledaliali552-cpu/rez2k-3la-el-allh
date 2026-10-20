@@ -1,12 +1,13 @@
 // نظام الركاب: استنى الراكب (فرد أو مجموعة)، وصّله لمحطة، واحسب الأجرة والبقشيش
 import * as THREE from '../vendor/three.module.min.js';
-import { PASSENGERS, pick, pickWeighted, rand, clamp } from './data.js';
+import { PASSENGERS, CARGO_TYPES, pick, pickWeighted, rand, clamp } from './data.js';
 import { CURB_X, place } from './world.js';
-import { buildPerson, buildBeacon } from './vehicles.js';
+import { buildPerson, buildCrates, buildBeacon } from './vehicles.js';
 import { landmarkS, landmarkAt, landmarkAfter, FREE_DESTS } from './roads.js';
 
 const roundTo = (n, step) => Math.round(n / step) * step;
 const GROUP_W = { 1: 4, 2: 3.2, 3: 2, 4: 1.4, 5: 0.7, 6: 0.5 };
+const MAX_MESH = 6; // أقصى عدد أشخاص بيتعرضوا على الرصيف
 
 // حساب الأجرة والبقشيش والنجوم (دالة صافية عشان تتختبر)
 export function settleRide(ride, remaining, fareMul = 1) {
@@ -64,12 +65,16 @@ export class Rides {
     this.beacon = null;
   }
 
-  spawn(playerS, cap = 3) {
+  spawn(playerS, spec = {}) {
+    const cap = spec.cap == null ? 3 : spec.cap;
+    const cargo = spec.cat === 'cargo' && !this.road.free;
     const road = this.road;
-    const type = PASSENGERS.find((p) => p.id === pickWeighted(road.pax)) || pick(PASSENGERS);
+    const type = cargo ? pick(CARGO_TYPES) : PASSENGERS.find((p) => p.id === pickWeighted(road.pax)) || pick(PASSENGERS);
     const gw = {};
-    for (let n = 1; n <= Math.max(1, cap); n++) gw[n] = GROUP_W[n] || 0.3;
-    let group = +pickWeighted(gw);
+    for (let n = 1; n <= Math.min(6, Math.max(1, cap)); n++) gw[n] = GROUP_W[n] || 0.3;
+    // ميكروباص/أتوبيس: كل فترة جروب كبير بيملّى العربية تقريبا
+    if (cap > 6) { gw[Math.round(cap * 0.5)] = 0.5; gw[Math.round(cap * 0.85)] = 0.3; }
+    let group = cargo ? Math.max(1, spec.load || 2) : +pickWeighted(gw);
     const gap = rand(280, 520);
     const pickupS = playerS + gap;
     let destS, dist, lm, baseFare;
@@ -96,11 +101,11 @@ export class Rides {
     const limit = dist / (14 + 3 * type.impatience) + 12;
     this.cur = {
       type, name: pick(type.names), group, place: lm.name, landmarkLines: lm.lines || null, free: !!road.free,
-      pickupS, destS, dist, baseFare, km: 0, limit, hardBrakes: 0, swerves: 0, crashes: 0,
+      cargo, pickupS, destS, dist, baseFare, km: 0, limit, hardBrakes: 0, swerves: 0, crashes: 0,
     };
     this.remaining = limit;
     this._clearMeshes();
-    this.person = buildPerson(type.shirt, group);
+    this.person = cargo ? buildCrates(type.shirt, group) : buildPerson(type.shirt, Math.min(group, MAX_MESH));
     place(this.person, pickupS, CURB_X, 0.16);
     this.person.rotation.y = Math.PI / 2;
     this.beacon = buildBeacon(0xffd23f);
@@ -136,7 +141,7 @@ export class Rides {
 
     if (this.phase === 'idle') {
       this.idleT -= dt;
-      if (this.idleT <= 0 && !ctx.shiftOver) this.spawn(player.s, player.spec.cap);
+      if (this.idleT <= 0 && !ctx.shiftOver) this.spawn(player.s, player.spec);
       return events;
     }
 

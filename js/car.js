@@ -23,10 +23,18 @@ export class PlayerCar {
     this.reset();
   }
 
+  setLoaded(v) { // التريلا: فاضية لحد ما تستلم بضاعة
+    v = !!v;
+    if (this.loaded === v || !this.spec || this.spec.body !== 'trailer') { this.loaded = v; return; }
+    this.loaded = v;
+    this.setSpec(this.spec, this._look, this._mods);
+  }
+
   setSpec(spec, look, mods) {
-    this.spec = spec;
+    this.spec = spec; this._look = look; this._mods = mods;
+    if (spec.body !== 'trailer') this.loaded = false;
     if (this.model) this.inner.remove(this.model.group);
-    this.model = buildPlayerSprite(spec.body, look, mods);
+    this.model = buildPlayerSprite(spec.body, look, mods, this.loaded);
     this.inner.add(this.model.group);
     this.w = this.model.w;
     this.l = this.model.l;

@@ -83,6 +83,7 @@ export function groupPrefix(n) {
 }
 
 export function boardLine(ride) {
+  if (ride.cargo) return pick(['حمّلت الشحنة، وصّلها بالسلامة لـ' + ride.place, 'البضاعة فى ضهرك… وديها ' + ride.place + ' وخلى بالك منها', 'الشحنة جاهزة، على ' + ride.place + ' من غير هزّ']);
   const place = ride.place;
   let text;
   if (ride.landmarkLines && ride.landmarkLines.length && Math.random() < 0.8) text = pick(ride.landmarkLines);
@@ -94,6 +95,7 @@ export function boardLine(ride) {
 }
 
 export function chatterLine(ride, roadId) {
+  if (ride.cargo) return pick(['هدّى فى المطبّات، البضاعة غالية!', 'التاجر مستنينى، متتأخرش', 'الحمولة تقيلة… خد الزرزور براحة']);
   const r = Math.random();
   if (r < 0.2 && BY_ROAD[roadId]) return pick(BY_ROAD[roadId]);
   if (r < 0.6 && CHATTER[ride.type.id]) return pick(CHATTER[ride.type.id]);

@@ -28,7 +28,8 @@ export function place(obj, s, x, y = 0) {
   obj.position.set(cx(s) + x, y, -s);
 }
 export function headingYaw(s, v, vx) {
-  return Math.atan2(-(dcx(s) * v + vx), Math.max(v, 0.5));
+  const y = Math.atan2(-(dcx(s) * v + vx), Math.max(v, 0.5));
+  return Math.max(-0.4, Math.min(0.4, y)); // متبانش العربية من جنبها (شريحة رفيعة)
 }
 
 export const THEMES = {
@@ -433,6 +434,18 @@ export class World {
       this.boardTexCache.set(name, t);
     }
     return t;
+  }
+
+  _warnTex() {
+    if (!this._warnT) {
+      this._warnT = canvasTex(256, 80, (g) => {
+        g.fillStyle = '#ffd21f'; g.fillRect(0, 0, 256, 80);
+        g.strokeStyle = '#111'; g.lineWidth = 6; g.strokeRect(4, 4, 248, 72);
+        g.fillStyle = '#111'; g.font = 'bold 34px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('⚠ إنذار: رادار', 128, 42);
+      }, false);
+    }
+    return this._warnT;
   }
 
   _limitTex(n) {
@@ -997,6 +1010,12 @@ export class World {
         sign.rotation.y = -Math.atan(dcx(ss));
         group.add(sign);
         geos.push(sign.material);
+        const warn = new THREE.Mesh(this.planeGeo, new THREE.MeshBasicMaterial({ map: this._warnTex() }));
+        warn.scale.set(2.4, 0.75, 1);
+        warn.position.set(cx(ss) + 8.6, 1.55, -ss);
+        warn.rotation.y = -Math.atan(dcx(ss));
+        group.add(warn);
+        geos.push(warn.material);
         const post = new THREE.Mesh(this.unitBox, this.mMetal);
         post.scale.set(0.12, 2.6, 0.12);
         post.position.set(cx(ss) + 8.6, 1.3, -ss - 0.05);

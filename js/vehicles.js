@@ -20,7 +20,9 @@ export const SIZES = {
   lada: { w: 1.72, l: 4.3 },
   gwagon: { w: 1.95, l: 4.7 },
   bus: { w: 2.55, l: 11.2 },
-  moto: { w: 0.85, l: 2.1 },
+  gm: { w: 1.95, l: 5.4 },
+  gac: { w: 1.95, l: 5.3 },
+  trailer: { w: 2.5, l: 12.5 },
   benelli: { w: 0.85, l: 2.1 },
   daiwa: { w: 0.85, l: 2.1 },
   harley: { w: 0.95, l: 2.4 },
@@ -67,6 +69,20 @@ export function buildPerson(shirtHex, count = 1) {
       g.userData.arm = arm;
     }
   }
+  return g;
+}
+
+// صناديق بضاعة على الرصيف (بدل الراكب فى مشاوير النقل)
+export function buildCrates(colorHex, count = 2) {
+  const g = new THREE.Group();
+  const wood = mat(0xb08a52), band = mat(colorHex);
+  const n = Math.min(count, 6);
+  for (let i = 0; i < n; i++) {
+    const px = (i % 3 - 1) * 1.0, py = Math.floor(i / 3) * 0.8;
+    add(g, wood, 0.9, 0.8, 0.9, px, 0.4 + py, (i % 2) * 0.1);
+    add(g, band, 0.94, 0.14, 0.94, px, 0.45 + py, (i % 2) * 0.1);
+  }
+  g.userData.arm = null;
   return g;
 }
 

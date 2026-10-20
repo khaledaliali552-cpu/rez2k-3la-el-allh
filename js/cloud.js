@@ -63,6 +63,7 @@ async function realBackend() {
       return (await fsM.getDocs(q)).docs.map(pack);
     },
     del: (path) => fsM.deleteDoc(ref(path)),
+    watch: (path, cb) => fsM.onSnapshot(ref(path), (s) => cb(s.exists() ? s.data() : null), () => cb(null)),
   };
 }
 

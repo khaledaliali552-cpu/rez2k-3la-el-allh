@@ -15,7 +15,7 @@ export function carHtml(body, look, mods) {
       <div class="wr-body" style="${lift ? 'transform:translateY(-7%)' : ''}">
         ${accs.includes('neon') ? `<img class="wr-neon-img" src="assets/images/cars/realistic/${L.rear}.webp" alt="">` : ''}
         <img class="wr-main" src="assets/images/cars/realistic/${L.rear}.webp" alt="">
-        ${st ? `<img class="wr-stk" src="assets/images/stickers/${st.id}.webp" alt="" style="top:${((1 - spot[0]) * 100).toFixed(1)}%;width:${(spot[1] * 100).toFixed(0)}%">` : ''}
+        ${st ? `<img class="wr-stk" src="assets/images/stickers/${st.id}.webp" alt="" style="top:${((1 - spot[0]) * 100).toFixed(1)}%;width:${(spot[1] * 72).toFixed(0)}%">` : ''}
         ${accs.includes('bar') ? '<i class="wr-bar"></i>' : ''}
       </div>
     </div>`;

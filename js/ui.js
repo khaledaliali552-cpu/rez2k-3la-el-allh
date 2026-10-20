@@ -218,7 +218,7 @@ export class UI {
         return `<button class="sw ${on ? 'on' : ''} ${has ? '' : 'locked'}" title="${c.name}${has ? '' : ' · ' + c.price + ' ج'}" data-car="${cur.id}" data-color="${c.id}" style="background:${hex(c.hex)}">${has ? '' : `<small>${c.price}</small>`}</button>`;
       }).join('') + '</div>';
     }
-    info.innerHTML = `<div class="gi-main"><h3>${cur.name}</h3><p>${cur.job ? 'عربية صاحبك ' + cur.job.ownerName + ' · بتدفعله ' + cur.job.share + '%' : cur.desc}</p><div class="meta">${cur.rented ? '' : 'بتشيل لحد ' + cur.cap + ' ركاب · تصليح ' + cur.repair + ' ج لكل 1%'}</div>${sw}</div>
+    info.innerHTML = `<div class="gi-main"><h3>${cur.name}</h3><p>${cur.job ? 'عربية صاحبك ' + cur.job.ownerName + ' · بتدفعله ' + cur.job.share + '%' : cur.desc}</p><div class="meta">${cur.rented ? '' : (cur.cat === 'cargo' ? 'بتشيل بضايع (مش ركاب) · تصليح ' : 'بتشيل لحد ' + cur.cap + ' ركاب · تصليح ') + cur.repair + ' ج لكل 1%'}</div>${sw}</div>
       <div class="gi-stats">${bar('السرعة', cur.vmax / 60)}${bar('التسارع', cur.accel / 11)}${bar('التحكم', cur.handling / 1.2)}</div>
       <div class="gi-act">${action}</div>`;
     const look = owned && !cur.job ? g.carLook(cur.id) : defaultLook(cur.body);
@@ -356,7 +356,7 @@ export class UI {
       if (kind.rent) h += card('car', 'boss_taxi', st.selected === 'boss_taxi', '🧑‍💼 عربية معلم', 'إيجار أو نسبة', '', 'gold');
       for (const id of ids) {
         const c = getCar(id);
-        h += card('car', id, st.selected === id, c.name, `سعة ${c.cap}`, '', 'green', false, carThumb(c.body, g.carLook(id)));
+        h += card('car', id, st.selected === id, c.name, c.cat === 'cargo' ? 'بضايع' : `سعة ${c.cap}`, '', 'green', false, carThumb(c.body, g.carLook(id)));
       }
       for (const sp of jobs) h += card('car', sp.id, st.selected === sp.id, `🤝 ${sp.name}`, `بتدفع ${sp.job.share}%`, '', 'green', false, carThumb(sp.body, defaultLook(sp.body)));
       h += '</div>';
@@ -374,7 +374,10 @@ export class UI {
         h += '</div><button class="btn primary" data-a="next" data-v="1">التالى ←</button>';
       }
     } else if (wz.step === 'opp') {
-      title = '🏁 اختار العربية اللى هتسابقها';
+      title = '🏁 اختار هتسابق مين';
+      h += `<h3 class="sec">🌐 سباق أونلاين مع صاحبك (سباق بوقت)</h3><div class="opts"><button class="opt${wz.opp === 'online' ? ' sel' : ''}" data-a="online" data-v="create"><b>🔗 اعمل غرفة وابعت الكود</b><small>تختار الطريق وتبعتله كود أو لينك</small></button></div>
+        <div class="race-join"><input id="race-code" maxlength="6" placeholder="كود الغرفة" value="${(g.pendingJoin || '')}"><button class="btn primary" data-a="online" data-v="join">ادخل</button></div>
+        <h3 class="sec">🤖 أو سابق عربية الكمبيوتر</h3>`;
       h += '<div class="opts cars3">' + CARS.filter((c) => !c.rented).map((c) => card('opp', c.id, wz.opp === c.id, c.name, `سرعة ${Math.round(c.vmax * 3.6)} كم/س`, '', 'gold', false, carThumb(c.body, defaultLook(c.body)))).join('') + '</div>';
     } else {
       go = true;
@@ -554,6 +557,7 @@ export class UI {
       return;
     }
     el.classList.remove('hidden');
+    el.classList.toggle('race', text.startsWith('🏁') || text.startsWith('⏱'));
     this._set('hint', text, (v) => (el.textContent = v));
   }
 

@@ -335,6 +335,7 @@ body.touch-mode .dmg { width: 84px; }
 
 .screen.full { display: block; padding: 0; overflow: hidden; background: #000; }
 .stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: max(100vw, calc(100vh * var(--ar))); aspect-ratio: var(--ar); }
+#screen-garage .stage { --ar: 1.8329; } #screen-workshop .stage { --ar: 1.3274; }
 .stage-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .stage-car { --hmax: 33vh; position: absolute; left: 50%; transform: translateX(-50%); bottom: max(var(--cb), 27vh); width: min(var(--cw), 60vw, calc(var(--hmax) * var(--car-a, 2))); }
 .screen.full .wr-car { position: relative; display: block; right: auto; bottom: auto; width: 100%; }
@@ -419,3 +420,22 @@ body.touch-mode .hud-bottom { left: 50%; transform: translateX(-50%); bottom: ca
 @media (max-width: 420px) { .opts.kinds { gap: 8px; } .opts.kinds .opt b { font-size: 16px; } }
 .ws-horns .item .row { flex: none; flex-wrap: nowrap; } .ws-horns .item .btn { flex: 0 0 auto; padding: 8px 12px; font-size: 14px; }
 .screen.full .ws-car img { height: 44px; object-fit: contain; }
+
+/* ===== موبايل طولى: صور الجراج والورشة الطولية ===== */
+@media (orientation: portrait) {
+  #screen-garage .stage { --ar: .5581; }
+  #screen-workshop .stage { --ar: .5581; }
+  #screen-garage .stage-car { --hmax: 30vh; bottom: 36vh; width: min(calc(var(--cw) * 2.5), 84vw, calc(var(--hmax) * var(--car-a, 2))); }
+  #screen-workshop .stage-car { bottom: 27%; width: min(calc(var(--cw) * 1.7), 70%); }
+  #screen-workshop .stage { left: 50%; width: min(100vw, calc((100vh - 56px) * var(--ar))); }
+}
+
+.hint.race { top: calc(62px + var(--safe-t)); right: calc(10px + var(--safe-r)); left: auto; transform: none; width: min(330px, 62vw); text-align: center; font-weight: 800; background: rgba(0,0,0,.62); border-radius: 14px; }
+
+#race-lobby { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.7); }
+#race-lobby.hidden { display: none; }
+.rl-box { background: #1b2336; border: 1px solid var(--line); border-radius: 18px; padding: 18px; width: min(92vw, 360px); text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.rl-box h3 { margin: 0; } .rl-box p { margin: 0; color: #d5d9e6; font-size: 14px; }
+.rl-code { font-size: 38px; font-weight: 900; letter-spacing: 6px; color: var(--accent); direction: ltr; }
+.rl-st { font-weight: 700; }
+.race-join { display: flex; gap: 8px; margin: 8px 0; } .race-join input { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color: #fff; font-size: 18px; text-transform: uppercase; letter-spacing: 3px; text-align: center; direction: ltr; }

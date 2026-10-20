@@ -45,6 +45,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // سباق أونلاين: المضيف بيعمل الغرفة، وصاحبه بيدخل بالكود، والاتنين بيكتبوا مكانهم
+    match /races/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.hostUid == request.auth.uid;
+      allow update: if signedIn() && (
+        resource.data.hostUid == request.auth.uid
+        || resource.data.guestUid == request.auth.uid
+        || (resource.data.guestUid == null && request.resource.data.guestUid == request.auth.uid));
+      allow delete: if signedIn() && resource.data.hostUid == request.auth.uid;
+    }
+
     // حصة صاحب العربية: السواق بيسجلها، وصاحب العربية بيستلمها
     match /payouts/{id} {
       allow create: if signedIn() && request.resource.data.workerUid == request.auth.uid

@@ -5,7 +5,6 @@ export const CAR_IMAGE_DIR = 'assets/images/cars/realistic/';
 export const LOOKS = {
   taxi: { def: 'white', looks: { white: { rear: 'taxi-verna-rear', card: 'taxi-verna-front' }, silver: { rear: 'lada-taxi-rear', card: 'lada-taxi-front' } } },
   lada: { def: 'white', looks: { white: { rear: 'lada-rear', card: 'lada-front' } } },
-  moto: { def: 'red', looks: { red: { rear: 'moto-rear-red', card: 'moto-rear-red' }, yellow: { rear: 'moto-rear-yellow', card: 'moto-rear-yellow' } } },
   hatch: { def: 'yellow', looks: { yellow: { rear: 'hatch-yellow-rear', card: 'hatch-yellow-front' } } },
   sedan: { def: 'white', looks: {
     white: { rear: 'corolla-white-rear', card: 'corolla-white-front' },
@@ -26,6 +25,9 @@ export const LOOKS = {
   } },
   pickup: { def: 'blue', looks: { blue: { rear: 'dababa-blue-rear', card: 'dababa-blue-front' }, orange: { rear: 'dababa-orange-rear', card: 'dababa-orange-front' }, green: { rear: 'pickup-green-rear', card: 'pickup-green-front' } } },
   bus: { def: 'blue', looks: { blue: { rear: 'bus-blue-rear', card: 'bus-blue-front' }, red: { rear: 'bus-red-rear', card: 'bus-red-front' } } },
+  gm: { def: 'red', looks: { red: { rear: 'gm-rear', card: 'gm-front' } } },
+  gac: { def: 'black', looks: { black: { rear: 'gac-rear', card: 'gac-front' } } },
+  trailer: { def: 'red', looks: { red: { rear: 'trailer-empty-rear', card: 'trailer-front' } } },
   benelli: { def: 'black', looks: { black: { rear: 'moto-benelli-rear', card: 'moto-benelli-front' } } },
   daiwa: { def: 'yellow', looks: { yellow: { rear: 'moto-daiwa-rear', card: 'moto-daiwa-front' } } },
   harley: { def: 'green', looks: { green: { rear: 'moto-harley-rear', card: 'moto-harley-front' } } },

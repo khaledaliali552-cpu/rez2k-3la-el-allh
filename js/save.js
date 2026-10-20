@@ -15,6 +15,7 @@ export const defaults = () => ({
   owned: ['boss_taxi'],
   selected: 'boss_taxi',
   colors: {},
+  raceBest: {},
   ownedColors: [], // مثال: "sedan:black"
   selectedRoad: 'abuqir',
   work: { boss: 'b_shokry', vehicle: 'r_taxi', mode: 'shift', kind: 'taraf', time: 'morning' },
@@ -53,10 +54,15 @@ export function normalize(parsed) {
   if (parsed.colors && typeof parsed.colors === 'object') d.colors = parsed.colors;
   if (parsed.roadsPlayed && typeof parsed.roadsPlayed === 'object') d.roadsPlayed = parsed.roadsPlayed;
   if (parsed.ach && typeof parsed.ach === 'object') d.ach = parsed.ach;
+  if (parsed.raceBest && typeof parsed.raceBest === 'object') d.raceBest = parsed.raceBest;
   if (parsed.damage && typeof parsed.damage === 'object') d.damage = parsed.damage;
   if (parsed.mods && typeof parsed.mods === 'object') d.mods = parsed.mods;
   if (!Array.isArray(d.owned) || !d.owned.includes('boss_taxi')) d.owned = ['boss_taxi', ...(d.owned || [])];
   if (!Array.isArray(d.ownedColors)) d.ownedColors = [];
+  // الموتوسيكل القديم اتشال: حوّله لدايو
+  if (d.owned.includes('moto')) { d.owned = d.owned.filter((x) => x !== 'moto'); if (!d.owned.includes('daiwa')) d.owned.push('daiwa'); }
+  if (d.selected === 'moto') d.selected = 'daiwa';
+  if (d.mods && d.mods.moto) { d.mods.daiwa = d.mods.daiwa || d.mods.moto; delete d.mods.moto; }
   // ترحيل نسخة قديمة: الألوان اللى كانت مختارة تعتبر ملكه
   for (const [car, col] of Object.entries(d.colors)) {
     const key = car + ':' + col;

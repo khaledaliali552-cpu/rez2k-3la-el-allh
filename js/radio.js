@@ -7,27 +7,29 @@ const PENTA_MIN = [0, 3, 5, 7, 10];
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];
 const PENTA_MAJ = [0, 2, 4, 7, 9];
 const KURD = [0, 1, 3, 5, 7, 8, 10];
+// الأنماط: dum = دُم الطبلة (واطى) | tak = تَك الطبلة (حافة) | riq = رق (جلاجل) | clap = تصفيق | kick = 808 مهرجانات
+// lead: siren (سرينة مهرجانات) | autotune (صوت عالى مهزّز) | organ (أورج شعبى) | mizmar (مزمار بلدى) | pluck (عود)
 const STYLES = [
-  { title: '🎹 إيقاع شعبى (حجاز)', bpm: 108, root: 146.83, scale: HIJAZ, seed: 11, wave: 'sawtooth', cut: 1800, vol: 0.16, len: 2.2,
-    kick: 'x..x....x..x....', snare: '....x.......x...', tak: '......xx......xx', hat: 'x.x.x.x.x.x.x.x.', bass: '0..2....0..3....', dens: 0.7 },
-  { title: '🔥 مهرجان الكورنيش', bpm: 128, root: 130.81, scale: PENTA_MIN, seed: 23, wave: 'square', cut: 2600, vol: 0.12, len: 1.2,
-    kick: 'x..x..x.x..x..x.', snare: '....x.......x..x', tak: 'x.x.x.x.x.x.x.xx', hat: '..x...x...x...x.', bass: '0..0..2.0..0..3.', dens: 0.6 },
-  { title: '🌅 حنين على البحر', bpm: 76, root: 164.81, scale: MINOR, seed: 5, wave: 'triangle', cut: 1400, vol: 0.2, len: 3.5, pad: true,
-    kick: 'x.......x.......', snare: '........x.......', tak: '', hat: 'x...x...x...x...', bass: '0.......3.......', dens: 0.5 },
-  { title: '🎻 سهرة إسكندرانى', bpm: 96, root: 146.83, scale: HIJAZ, seed: 37, wave: 'sawtooth', cut: 2200, vol: 0.14, len: 2.6,
-    kick: 'x..x..x.x.......', snare: '....x.......x...', tak: '..x...x...x...x.', hat: 'x.x.x.x.x.x.x.x.', bass: '0..0..2.3..2....', dens: 0.8 },
-  { title: '☀️ صباحية رايقة', bpm: 92, root: 196.0, scale: PENTA_MAJ, seed: 8, wave: 'triangle', cut: 2800, vol: 0.2, len: 2.5, pad: true,
-    kick: 'x...x...x...x...', snare: '....x.......x...', tak: '', hat: 'x.x.x.x.x.x.x.x.', bass: '0...2...3...2...', dens: 0.65 },
-  { title: '🌙 ليل رايق (لوفاى)', bpm: 68, root: 110.0, scale: MINOR, seed: 51, wave: 'sine', cut: 1200, vol: 0.24, len: 3.8, pad: true,
-    kick: 'x.....x.x.......', snare: '........x.......', tak: '', hat: '..x...x...x...x.', bass: '0.....2.3.......', dens: 0.45 },
-  { title: '🏁 سباق على الجسر', bpm: 150, root: 146.83, scale: KURD, seed: 64, wave: 'sawtooth', cut: 3200, vol: 0.12, len: 1.4,
-    kick: 'x...x...x...x..x', snare: '....x.......x...', tak: 'x.x.x.x.x.x.x.x.', hat: 'xxxxxxxxxxxxxxxx', bass: '0.0.0.0.2.2.3.3.', dens: 0.85 },
-  { title: '🥁 دُبكة وطرب', bpm: 120, root: 155.56, scale: HIJAZ, seed: 77, wave: 'square', cut: 2000, vol: 0.1, len: 1.8,
-    kick: 'x.....x.x...x...', snare: '..x...x...x...x.', tak: '.x...x...x...x..', hat: 'x.x.x.x.x.x.x.x.', bass: '0.....2.0...3...', dens: 0.75 },
-  { title: '🌴 ساحل وصيف', bpm: 104, root: 174.61, scale: MAJOR, seed: 91, wave: 'triangle', cut: 3000, vol: 0.2, len: 2.0,
-    kick: 'x..x..x...x...x.', snare: '....x.......x...', tak: '..x.....x.......', hat: 'x.x.x.x.x.x.x.x.', bass: '0..3..4...3.....', dens: 0.7 },
-  { title: '🚖 تاكسى بعد نص الليل', bpm: 84, root: 123.47, scale: KURD, seed: 103, wave: 'sawtooth', cut: 1500, vol: 0.14, len: 3.0, pad: true,
-    kick: 'x..x....x.......', snare: '....x.......x...', tak: '......x.......x.', hat: 'x.x.x.x.x.x.x.x.', bass: '0..0....2.......', dens: 0.55 },
+  { title: '🔥 مهرجان 808 تقيل', bpm: 130, root: 130.81, scale: PENTA_MIN, seed: 23, lead: 'siren', cut: 3200, vol: 0.13, len: 1.4, sub: true,
+    kick: 'x..x..x.x..x..x.', clap: '....x.......x..x', dum: '', tak: '', riq: '', hat: 'x.x.x.x.x.x.x.xx', bass: '0..0..2.0..0..3.', dens: 0.55 },
+  { title: '🥁 طبلة ورق شعبى (مقسوم)', bpm: 100, root: 146.83, scale: HIJAZ, seed: 11, lead: 'organ', cut: 2400, vol: 0.15, len: 1.8,
+    dum: 'x...x.x.x...x...', tak: '..x...x...x...x.', riq: 'x.xxx.xxx.xxx.xx', clap: '', kick: '', hat: '', bass: '0..0..2.0...3...', dens: 0.7 },
+  { title: '🎤 مهرجان أوتوتيون', bpm: 138, root: 146.83, scale: KURD, seed: 64, lead: 'autotune', cut: 3600, vol: 0.12, len: 1.5, sub: true,
+    kick: 'x...x..xx...x...', clap: '....x.......x...', dum: '', tak: '..x...x...x...xx', riq: 'xxxxxxxxxxxxxxxx', hat: 'x.x.x.x.x.x.x.x.', bass: '0...0.2.0...3.2.', dens: 0.75 },
+  { title: '💃 فرح شعبى بلدى', bpm: 112, root: 155.56, scale: HIJAZ, seed: 77, lead: 'mizmar', cut: 2600, vol: 0.12, len: 1.6,
+    dum: 'x.....x.x...x...', tak: '..x.x...x.x.x...', riq: 'x.x.x.x.x.x.x.x.', clap: '....x.......x...', kick: '', hat: '', bass: '0.....2.0...3...', dens: 0.8 },
+  { title: '🛺 توك توك مهرجان', bpm: 144, root: 123.47, scale: PENTA_MIN, seed: 91, lead: 'siren', cut: 3000, vol: 0.12, len: 1.1, sub: true,
+    kick: 'x..x..x..x..x.x.', clap: '....x.......x.x.', dum: '', tak: 'x.x.x.x.x.x.x.xx', riq: '', hat: 'xxxxxxxxxxxxxxxx', bass: '0..0..0.2..2..3.', dens: 0.6 },
+  { title: '🎷 مزمار وطبلة', bpm: 118, root: 164.81, scale: HIJAZ, seed: 37, lead: 'mizmar', cut: 2800, vol: 0.13, len: 1.5,
+    dum: 'x..x..x.x..x..x.', tak: '..x..x..x..x.x..', riq: 'x.x.x.x.x.x.x.xx', clap: '', kick: '', hat: '', bass: '0..2..3.0..2....', dens: 0.85 },
+  { title: '🔊 مهرجان دوس', bpm: 124, root: 110.0, scale: PENTA_MIN, seed: 51, lead: 'autotune', cut: 2800, vol: 0.12, len: 2.0, sub: true,
+    kick: 'x.....x.x...x...', clap: '....x.......x...', dum: '', tak: '', riq: '..x...x...x...x.', hat: 'x.x.x.x.x.x.x.x.', bass: '0.....0.2...3...', dens: 0.5 },
+  { title: '🌙 سهرة شعبى بالعود', bpm: 90, root: 146.83, scale: HIJAZ, seed: 5, lead: 'pluck', cut: 2400, vol: 0.2, len: 2.4, pad: true,
+    dum: 'x.....x.x.......', tak: '..x...x...x...x.', riq: 'x.x.x.x.x.x.x.x.', clap: '', kick: '', hat: '', bass: '0.....2.3.......', dens: 0.6 },
+  { title: '🏁 مهرجان السباق', bpm: 150, root: 146.83, scale: KURD, seed: 8, lead: 'siren', cut: 3400, vol: 0.12, len: 1.2, sub: true,
+    kick: 'x..x..x.x..x..xx', clap: '....x.......x...', dum: '', tak: 'x.x.x.x.x.x.x.x.', riq: 'xxxxxxxxxxxxxxxx', hat: '', bass: '0.0.0.0.2.2.3.3.', dens: 0.8 },
+  { title: '🥳 ليلة حنة بلدى', bpm: 106, root: 174.61, scale: HIJAZ, seed: 103, lead: 'organ', cut: 2600, vol: 0.14, len: 1.7,
+    dum: 'x..x..x.x..x..x.', tak: '..x...x...x..xx.', riq: 'x.xxx.xxx.xxx.xx', clap: '....x.......x...', kick: '', hat: '', bass: '0..0..2.3..2..0.', dens: 0.75 },
 ];
 const GENS = STYLES.map((st) => ({ title: st.title + ' · متولّدة', gen: true, style: st }));
 
@@ -256,23 +258,78 @@ export class Radio {
     o.stop(t + dur + 0.05);
   }
 
+  _dum(t) {
+    const c = this.ctx;
+    const o = c.createOscillator(); const g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(78, t + 0.12);
+    this._env(g, t, 0.003, 0.26, 0.95);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.32);
+    this._noiseHit(t, 400, 0.04, 0.2, 'lowpass');
+  }
+
+  _tabla(t) { // تَك: حافة الطبلة
+    this._noiseHit(t, 2600, 0.06, 0.45);
+    this._tone(t, 520, 0.07, 0.18, 'sine', 3000);
+  }
+
+  _riq(t, acc) { // رق: جلاجل
+    for (let j = 0; j < 3; j++) this._noiseHit(t + j * 0.011, 9500 - j * 900, 0.05, acc ? 0.2 : 0.11, 'highpass');
+    if (acc) this._noiseHit(t, 3800, 0.05, 0.16);
+  }
+
+  _clap(t) {
+    for (let j = 0; j < 3; j++) this._noiseHit(t + j * 0.012, 1500, 0.06, 0.4);
+  }
+
+  _sub(t, f, dur) { // 808
+    const c = this.ctx;
+    const o = c.createOscillator(); const g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f * 1.6, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.05);
+    this._env(g, t, 0.005, dur, 0.75);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  _lead(t, f, dur, st) {
+    const c = this.ctx;
+    const mk = (type, freq, vol, cut, vib) => {
+      const o = c.createOscillator(); o.type = type; o.frequency.value = freq;
+      if (vib) { const l = c.createOscillator(); const lg = c.createGain(); l.frequency.value = vib[0]; lg.gain.value = freq * vib[1]; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dur + 0.1); }
+      const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = cut;
+      const g = c.createGain(); this._env(g, t, 0.012, dur, vol);
+      o.connect(fl); fl.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.1);
+    };
+    switch (st.lead) {
+      case 'siren': { // سرينة بتطلع وتنزل
+        const o = c.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(f * 2, t); o.frequency.linearRampToValueAtTime(f * 2.5, t + dur * 0.5); o.frequency.linearRampToValueAtTime(f * 2, t + dur);
+        const g = c.createGain(); this._env(g, t, 0.01, dur, st.vol * 0.9);
+        const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = st.cut;
+        o.connect(fl); fl.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.1); break;
+      }
+      case 'autotune': mk('sawtooth', f * 2, st.vol, st.cut, [6.5, 0.012]); mk('square', f * 2.003, st.vol * 0.5, st.cut, [6.5, 0.012]); break;
+      case 'organ': mk('sawtooth', f, st.vol, st.cut, [5, 0.006]); mk('sawtooth', f * 1.006, st.vol * 0.7, st.cut, null); mk('square', f * 0.5, st.vol * 0.4, 900, null); break;
+      case 'mizmar': mk('square', f * 2, st.vol, 1700, [5.5, 0.01]); mk('sawtooth', f * 2.01, st.vol * 0.6, 1500, null); break;
+      default: mk('triangle', f, st.vol * 1.4, st.cut, null); mk('sawtooth', f * 2, st.vol * 0.3, 1800, null); // عود
+    }
+  }
+
   _playStep(i, t) {
     const st = this.style;
     const k = i % 16;
     const on = (pat) => pat && pat[k] === 'x';
-    const swing = st.bpm < 100 ? 0.012 * (k % 2) : 0;
-    t += swing;
+    t += st.bpm < 100 ? 0.012 * (k % 2) : 0;
     if (on(st.kick)) this._kick(t);
-    if (on(st.snare)) this._noiseHit(t, 1800, 0.14, 0.5);
-    if (on(st.tak)) this._noiseHit(t, 5200, 0.05, 0.25, 'highpass');
+    if (on(st.dum)) this._dum(t);
+    if (on(st.tak)) this._tabla(t);
+    if (on(st.clap)) this._clap(t);
+    if (on(st.riq)) this._riq(t, k % 4 === 0);
     if (on(st.hat)) this._noiseHit(t, 8500, 0.03, 0.12, 'highpass');
     const sc = st.scale;
     const freq = (deg, oct) => st.root * oct * 2 ** ((sc[deg % sc.length] + 12 * Math.floor(deg / sc.length)) / 12);
     const dur = (60 / st.bpm / 4) * st.len;
     const n = this.mel[i % 32];
-    if (n >= 0) this._tone(t, freq(n, 2), dur, st.vol, st.wave, st.cut);
+    if (n >= 0) this._lead(t, freq(n, 1), dur, st);
     const b = st.bass[k];
-    if (b && b !== '.') this._tone(t, freq(+b, 0.5), dur * 1.4, 0.3, 'triangle', 500);
+    if (b && b !== '.') { if (st.sub) this._sub(t, freq(+b, 0.25), dur * 1.8); else this._tone(t, freq(+b, 0.5), dur * 1.4, 0.3, 'triangle', 500); }
     if (st.pad && (k === 0 || k === 8)) {
       const base = Math.floor(i / 8) % 2 ? 3 : 0;
       for (const d of [0, 2, 4]) this._tone(t, freq(base + d, 1), dur * 7, 0.07, 'sine', 900);

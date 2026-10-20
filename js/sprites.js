@@ -16,12 +16,19 @@ const S = {
   luxRear: [['lancer-black-rear', 1.95, 0.7879], ['byd-rear', 2.0, 0.7963], ['corolla20-rear', 2.0, 0.8296]],
   taxiRear: [['taxi-verna-rear', 2.0, 0.8454], ['lada-taxi-rear', 1.85, 0.9482]],
   hatchRear: [['hatch-yellow-rear', 1.8, 0.8738]],
-  busRear: [['bus-red-rear', 3.0, 0.986], ['bus-blue-rear', 3.33, 0.9308]],
+  busRear: [['bus-red-rear', 3.0, 0.986], ['bus-blue-rear', 3.1, 1.1346]],
+  gmRear: [['gm-rear', 2.0, 1.1788]],
+  gmFront: [['gm-front', 2.0, 1.0712]],
+  gacRear: [['gac-rear', 2.05, 0.9404]],
+  gacFront: [['gac-front', 2.05, 0.9096]],
+  trailerRear: [['trailer-empty-rear', 2.6, 1.4019]],
+  trailerLoadedRear: [['trailer-loaded-rear', 2.6, 1.4]],
+  trailerFront: [['trailer-front', 2.6, 1.3077]],
   vanRear: [['van-hiace-rear', 1.95, 0.902]],
   tonayaRear: [['van-white-rear', 1.75, 0.9725]],
   tuktukRear: [['tuktuk-red-rear', 1.45, 1.1494]],
   tuktuk2Rear: [['tuktuk-gold-rear', 1.45, 1.1128]],
-  moto: [['moto-rear-red', 0.9, 1.6902], ['moto-rear-yellow', 0.9, 1.7769], ['moto-benelli-rear', 1.26, 1.3481], ['moto-daiwa-rear', 1.24, 1.3673], ['moto-harley-rear', 1.34, 1.2673], ['moto-hojen-rear', 1.59, 1.1038], ['vespa-rear', 1.05, 1.6135]],
+  moto: [['moto-benelli-rear', 1.26, 1.3481], ['moto-daiwa-rear', 1.24, 1.3673], ['moto-harley-rear', 1.34, 1.2673], ['moto-hojen-rear', 1.59, 1.1038], ['vespa-rear', 1.05, 1.6135]],
   motoFront: [['moto-benelli-front', 1.05, 1.6231], ['moto-daiwa-front', 1.21, 1.4019], ['moto-harley-front', 1.26, 1.3442], ['moto-hojen-front', 1.34, 1.3019], ['vespa-front', 1.04, 1.6288]],
   ambulance: [['ambulance-rear', 2.0, 1.2399]],
   luxFront: [['lux-front-black', 1.95, 0.7464], ['lux-front-blue', 1.95, 0.7464], ['lux-front-beige', 1.95, 0.7464], ['lux-front-silver', 1.95, 0.7464], ['lux-front-white', 1.95, 0.7464]],
@@ -44,8 +51,8 @@ for (const list of Object.values(S)) for (const [n, w, a] of list) IMG[n] = [w, 
 
 // نوع المرور -> مجموعة الصور (rear = اتجاهك، front = عكسى)
 const MAP = {
-  rear: { sedan: 'sedanRear', pickup: 'pickupRear', gwagon: 'gwagonRear', lada: 'ladaRear', suv: 'suvRear', moto: 'moto', ambulance: 'ambulance', coupe: 'coupeRear', luxury: 'luxRear', truck: 'pickupRear', boxtruck: 'pickupRear', taxi: 'taxiRear', hatch: 'hatchRear', bus: 'busRear', microbus: 'vanRear', tonaya: 'tonayaRear', tuktuk: 'tuktukRear', tuktuk2: 'tuktuk2Rear' },
-  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront', hatch: 'hatchFront', bus: 'busFront', microbus: 'vanFront', tonaya: 'tonayaFront', tuktuk: 'tuktukFront', tuktuk2: 'tuktuk2Front', pickup: 'pickupFront', moto: 'motoFront', coupe: 'coupeFront', truck: 'pickupFront', boxtruck: 'pickupFront' },
+  rear: { sedan: 'sedanRear', pickup: 'pickupRear', gwagon: 'gwagonRear', lada: 'ladaRear', suv: 'suvRear', moto: 'moto', ambulance: 'ambulance', coupe: 'coupeRear', luxury: 'luxRear', truck: 'pickupRear', boxtruck: 'pickupRear', taxi: 'taxiRear', hatch: 'hatchRear', bus: 'busRear', microbus: 'vanRear', gm: 'gmRear', gac: 'gacRear', trailer: 'trailerRear', tonaya: 'tonayaRear', tuktuk: 'tuktukRear', tuktuk2: 'tuktuk2Rear' },
+  front: { luxury: 'luxFront', sedan: 'sedanFront', taxi: 'taxiFront', gwagon: 'gwagonFront', lada: 'ladaFront', suv: 'suvFront', hatch: 'hatchFront', bus: 'busFront', microbus: 'vanFront', gm: 'gmFront', gac: 'gacFront', trailer: 'trailerFront', tonaya: 'tonayaFront', tuktuk: 'tuktukFront', tuktuk2: 'tuktuk2Front', pickup: 'pickupFront', moto: 'motoFront', coupe: 'coupeFront', truck: 'pickupFront', boxtruck: 'pickupFront' },
 };
 
 const loader = new THREE.TextureLoader();
@@ -137,9 +144,9 @@ function stickerMaterial(id) {
 export const STICKER_SPOT = {
   sedan: [0.64, 0.62], taxi: [0.64, 0.6], hatch: [0.62, 0.62], coupe: [0.58, 0.5], suv: [0.64, 0.6], luxury: [0.64, 0.6],
   microbus: [0.62, 0.7], tonaya: [0.6, 0.7], lada: [0.62, 0.6], gwagon: [0.64, 0.6], tuktuk: [0.52, 0.6], tuktuk2: [0.5, 0.6], moto: [0.5, 0.5],
-  pickup: [0.7, 0.55], bus: [0.55, 0.6], benelli: [0.4, 0.4], daiwa: [0.4, 0.4], harley: [0.4, 0.4], hojen: [0.4, 0.4], vespa: [0.4, 0.4],
+  pickup: [0.7, 0.55], gac: [0.4, 0.4], gm: [0.3, 0.45], trailer: [0.5, 0.0], bus: [0.4, 0.5], benelli: [0.4, 0.4], daiwa: [0.4, 0.4], harley: [0.4, 0.4], hojen: [0.4, 0.4], vespa: [0.4, 0.4],
 };
-export const NOGLASS = new Set(['moto', 'benelli', 'daiwa', 'harley', 'hojen', 'vespa']); // مفيش زجاج خلفى
+export const NOGLASS = new Set(['trailer', 'benelli', 'daiwa', 'harley', 'hojen', 'vespa']); // مفيش زجاج خلفى
 let barTex = null;
 
 // نيون من حواف العربية من تحت: بنعمل ظل ملون بلون العربية (من الصورة نفسها) ونفرده ونخليه يظهر من تحت بس
@@ -178,8 +185,9 @@ function neonMaterial(name) {
 }
 export function setSpriteLightPlayer() {}
 
-export function buildPlayerSprite(body, colorId, mods) {
-  const look = lookFor(body, colorId);
+export function buildPlayerSprite(body, colorId, mods, loaded) {
+  let look = lookFor(body, colorId);
+  if (body === 'trailer' && loaded) look = { ...look, rear: 'trailer-loaded-rear' };
   const [w, aspect] = IMG[look.rear] || [1.9, 0.8];
   const h = w * aspect;
   const lift = mods && (mods.accs || []).includes('lift') ? 0.16 : 0;
@@ -206,7 +214,7 @@ export function buildPlayerSprite(body, colorId, mods) {
   const st = mods && mods.slogan && !NOGLASS.has(body) ? stickerById(mods.slogan) : null;
   if (st) {
     const [fy, fw] = STICKER_SPOT[body] || [0.6, 0.6];
-    const sw = w * fw, sh = sw * st.aspect;
+    const sw = w * fw * 0.72, sh = sw * st.aspect;
     const sg = new THREE.PlaneGeometry(sw, sh);
     const sp = new THREE.Mesh(sg, stickerMaterial(st.id));
     sp.position.set(0, h * fy, 0.03);

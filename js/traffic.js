@@ -166,6 +166,13 @@ export class Traffic {
         }
       }
 
+      for (const e of this.extra || []) {
+        if (e.root && e.root.visible && Math.abs(e.x - c.x) < 2.5 && e.s > c.s) {
+          const g = e.s - c.s - (e.l + c.model.l) / 2;
+          if (g < gap) { gap = g; leader = e; }
+        }
+      }
+
       let desired = c.cruise;
       const safe = 6 + c.v * 0.9;
       if (leader && gap < safe) desired = Math.max(0, Math.min(desired, leader.v + (gap - 5) * 0.6));

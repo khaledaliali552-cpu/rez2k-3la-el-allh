@@ -14,7 +14,7 @@ export const ROADS = [
     tagClass: 'gold',
     first: 600,
     spacing: 850,
-    radar: { first: 700, step: 1100, limits: [60, 80] },
+    radar: { first: 700, step: 2200, limits: [60, 80] },
     env: { right: 'sea', left: 'towers', ground: 0x77786f, median: 'palms', trees: 'palm', overpass: false, billboards: false },
     traffic: {
       density: 0.85, speed: 1.0,
@@ -38,7 +38,7 @@ export const ROADS = [
     tagClass: '',
     first: 500,
     spacing: 650,
-    radar: { first: 800, step: 1000, limits: [60, 80] },
+    radar: { first: 800, step: 2000, limits: [60, 80] },
     env: { right: 'buildings', left: 'old', ground: 0x7a7a72, median: 'concrete', trees: 'tree', overpass: true, billboards: true },
     traffic: {
       density: 1.0, speed: 0.9,
@@ -77,7 +77,7 @@ export const ROADS = [
     tagClass: '',
     first: 450,
     spacing: 600,
-    radar: { first: 900, step: 1000, limits: [50, 70] },
+    radar: { first: 900, step: 2000, limits: [50, 70] },
     env: { right: 'canal', left: 'shops', ground: 0x80796a, median: 'concrete', trees: 'tree', overpass: false, billboards: true },
     traffic: {
       density: 1.1, speed: 0.8,
@@ -106,7 +106,7 @@ export const ROADS = [
     tagClass: 'blue',
     first: 900,
     spacing: 1200,
-    radar: { first: 1000, step: 1400, limits: [80, 100] },
+    radar: { first: 1000, step: 2800, limits: [80, 100] },
     env: { right: 'buildings', left: 'mixed', ground: 0x73756e, median: 'guardrail', trees: 'none', overpass: true, billboards: true },
     traffic: {
       density: 0.9, speed: 1.25,
@@ -127,7 +127,7 @@ export const ROADS = [
     tagClass: 'green',
     first: 1000,
     spacing: 1100,
-    radar: { first: 1200, step: 1600, limits: [90, 100] },
+    radar: { first: 1200, step: 3200, limits: [90, 100] },
     env: { right: 'desert', left: 'industrial', ground: 0xb3a27a, median: 'guardrail', trees: 'none', overpass: false, billboards: true },
     traffic: {
       density: 0.8, speed: 1.3,
@@ -154,7 +154,7 @@ export const FREE_ROAD = {
   sub: 'العجمى · الساحل · العاصمة · مطروح',
   fare: 0, tag: 'حر', tagIcon: '🛣️', tagClass: 'blue',
   first: 1e9, spacing: 1e9,
-  radar: { first: 1500, step: 1800, limits: [90, 100] },
+  radar: { first: 1500, step: 3600, limits: [90, 100] },
   env: { right: 'desert', left: 'mixed', ground: 0xb3a27a, median: 'guardrail', trees: 'none', overpass: true, billboards: true },
   traffic: {
     density: 0.85, speed: 1.3,

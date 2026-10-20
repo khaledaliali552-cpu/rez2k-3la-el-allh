@@ -1,6 +1,6 @@
 // بيانات اللعبة: العربيات، الألوان، الركاب، المهام، الإنجازات
 
-export const GAME_NAME = 'أجرة الكورنيش';
+export const GAME_NAME = 'على القمة';
 export const SHIFT_SECONDS = 360; // مدة الوردية
 export const RADAR_FINE = 200;
 export const WELCOME_BONUS = 300; // مكافأة اللى بيدخل من رابط دعوة
@@ -29,17 +29,12 @@ export const CARS = [
     vmax: 34, accel: 5.2, brake: 15, handling: 0.85, repair: 18, fareMul: 1,
   },
   {
-    id: 'lada', cat: 'private', name: 'صندوقية قديمة', body: 'lada', price: 4000, cap: 3,
+    id: 'lada', cat: 'private', name: 'صندوقية قديمة', body: 'lada', price: 4000, cap: 4,
     desc: 'عربية مربعة من أيام زمان. رخيصة وبتتصلح بسهولة.',
     vmax: 33, accel: 5.4, brake: 15, handling: 0.95, repair: 14, fareMul: 1,
   },
   {
-    id: 'moto', cat: 'bike', name: 'موتوسيكل', body: 'moto', price: 3000, cap: 1,
-    desc: 'بتزن بين العربيات! راكب واحد بس، لكن مشاويرك أسرع.',
-    vmax: 40, accel: 9, brake: 20, handling: 1.3, repair: 8, fareMul: 1,
-  },
-  {
-    id: 'hatch', cat: 'private', name: 'هاتشباك صغيرة', body: 'hatch', price: 6000, cap: 3,
+    id: 'hatch', cat: 'private', name: 'هاتشباك صغيرة', body: 'hatch', price: 6000, cap: 4,
     desc: 'خفيفة وسهلة فى الزحمة، لكن مش سريعة أوى.',
     vmax: 38, accel: 6.2, brake: 16, handling: 1.0, repair: 18, fareMul: 1,
   },
@@ -54,12 +49,12 @@ export const CARS = [
     vmax: 46, accel: 7.5, brake: 18, handling: 1.0, repair: 24, fareMul: 1,
   },
   {
-    id: 'microbus', cat: 'hire', name: 'ميكروباص', body: 'microbus', price: 40000, cap: 6,
-    desc: 'بتشيل لحد 6 ركاب فى المشوار الواحد. تقيل شوية فى اللف.',
+    id: 'microbus', cat: 'hire', name: 'ميكروباص', body: 'microbus', price: 40000, cap: 12,
+    desc: 'بتشيل لحد 12 راكب فى المشوار الواحد. تقيل شوية فى اللف.',
     vmax: 36, accel: 5.5, brake: 15, handling: 0.75, repair: 30, fareMul: 1,
   },
   {
-    id: 'coupe', cat: 'private', name: 'كوبيه رياضية', body: 'coupe', price: 60000, cap: 2,
+    id: 'coupe', cat: 'private', name: 'كوبيه رياضية', body: 'coupe', price: 60000, cap: 4,
     desc: 'سريعة جدا وتلف زى الفرخة. خلى بالك من الرادارات!',
     vmax: 56, accel: 10, brake: 22, handling: 1.15, repair: 36, fareMul: 1,
   },
@@ -89,12 +84,27 @@ export const CARS = [
     vmax: 25, accel: 4.8, brake: 14, handling: 1.15, repair: 12, fareMul: 1,
   },
   {
-    id: 'bus', name: 'أتوبيس الإسكندرية', body: 'bus', price: 120000, cap: 6, cat: 'hire',
-    desc: 'أتوبيس نقل عام قديم. بيشيل 6 ركاب، تقيل جدا فى اللف.',
+    id: 'bus', name: 'أتوبيس الإسكندرية', body: 'bus', price: 120000, cap: 35, cat: 'hire',
+    desc: 'أتوبيس نقل عام قديم. بيشيل 35 راكب، تقيل جدا فى اللف.',
     vmax: 30, accel: 4.2, brake: 13, handling: 0.6, repair: 70, fareMul: 1,
   },
   {
-    id: 'dababa', name: 'دبابة', body: 'pickup', price: 55000, cap: 3, cat: 'cargo',
+    id: 'gm', name: 'ميكروباص جى إم', body: 'gm', price: 75000, cap: 12, cat: 'hire',
+    desc: 'ميكروباص أحمر بسلم على السقف. بيشيل 12 راكب.',
+    vmax: 36, accel: 5.0, brake: 14, handling: 0.72, repair: 38, fareMul: 1,
+  },
+  {
+    id: 'gac', name: 'دبابة مسكة حالها', body: 'gac', price: 160000, cap: 0, load: 3, cat: 'cargo',
+    desc: 'بيك أب أسود تقيل لنقل البضايع. قوى وبيتحمل.',
+    vmax: 46, accel: 7.2, brake: 18, handling: 0.9, repair: 45, fareMul: 1,
+  },
+  {
+    id: 'trailer', name: 'تريلا', body: 'trailer', price: 350000, cap: 0, load: 6, cat: 'cargo',
+    desc: 'تريلا ضخمة. فاضية فى العادى وبتتحمل لما تستلم البضاعة.',
+    vmax: 34, accel: 3.4, brake: 11, handling: 0.5, repair: 90, fareMul: 1,
+  },
+  {
+    id: 'dababa', name: 'دبابة', body: 'pickup', price: 55000, cap: 0, load: 2, cat: 'cargo',
     desc: 'بيك أب شغال وبتاع مشاوير. قوى وبيتحمل.',
     vmax: 40, accel: 6.0, brake: 16, handling: 0.92, repair: 32, fareMul: 1,
   },
@@ -128,10 +138,10 @@ export const CARS = [
 // مركبات الإيجار عند المعلمين (الأسعار بتتضرب فى feeMul)
 export const RENT_VEHICLES = [
   { id: 'r_tuktuk', name: 'توك توك', body: 'tuktuk', cap: 3, feeMul: 0.6, vmax: 24, accel: 4.6, brake: 14, handling: 1.2, repair: 10, fareMul: 1, repairOnBoss: true, note: 'صغير ومرن، مناسب لأحياء المحمودية' },
-  { id: 'r_tonaya', name: 'تونية', body: 'tonaya', cap: 4, feeMul: 0.8, vmax: 30, accel: 4.8, brake: 14, handling: 0.95, repair: 14, fareMul: 1, note: 'سريعة للأحياء والزنقات' },
+  { id: 'r_tonaya', name: 'تونية', body: 'tonaya', cap: 6, feeMul: 0.8, vmax: 30, accel: 4.8, brake: 14, handling: 0.95, repair: 14, fareMul: 1, note: 'سريعة للأحياء والزنقات' },
   { id: 'r_tuktuk2', name: 'توكتوك معدّل', body: 'tuktuk2', cap: 3, feeMul: 0.8, vmax: 25, accel: 4.8, brake: 14, handling: 1.15, repair: 12, fareMul: 1, note: 'متزوّق باستبن وصدام' },
   { id: 'r_taxi', name: 'تاكسى', body: 'taxi', cap: 4, feeMul: 1, vmax: 36, accel: 5.4, brake: 15, handling: 0.9, repair: 18, fareMul: 1, note: 'عربية الشغل المضمونة' },
-  { id: 'r_microbus', name: 'ميكروباص', body: 'microbus', cap: 6, feeMul: 1.3, vmax: 34, accel: 5.2, brake: 15, handling: 0.78, repair: 28, fareMul: 1, note: 'بتشيل 6 ركاب' },
+  { id: 'r_microbus', name: 'ميكروباص', body: 'microbus', cap: 12, feeMul: 1.3, vmax: 34, accel: 5.2, brake: 15, handling: 0.78, repair: 28, fareMul: 1, note: 'بتشيل 12 راكب' },
 ];
 
 // المعلمين (شغل بالإيجار): يومية ثابتة (fee) أو نسبة من كسبك (pct). الحكايات من تأليفنا.
@@ -291,3 +301,15 @@ export const TIMES = [
   { id: 'maghrib', icon: '🌇', name: 'مغربية', desc: 'زحمة شوية', mul: 1.25, theme: 'sunset' },
 ];
 export const getTime = (id) => TIMES.find((t) => t.id === id) || TIMES[1];
+
+// الأجرة بتزيد كل ما العربية تغلى (عربيات الإيجار والمعلم بتفضل ×1)
+export const priceMul = (price) => (price > 4000 ? 1 + 0.45 * Math.log10(price / 4000) : 1);
+
+// شحنات النقل (العربية بتشيل بضاعة مش ناس)
+export const CARGO_TYPES = [
+  { id: 'veg', icon: '🥬', label: 'خضار وفاكهة', shirt: 0x4c9a2a, tipMul: 0.9, impatience: 1.5, bumpSens: 1.4, names: ['الحاج سعيد (سوق الخضار)', 'أبو العلا', 'تاجر الجملة'] },
+  { id: 'build', icon: '🧱', label: 'مواد بناء', shirt: 0xb5651d, tipMul: 0.6, impatience: 0.8, bumpSens: 0.4, names: ['المقاول عادل', 'أسطى فتحى', 'مهندس رأفت'] },
+  { id: 'furn', icon: '🛋️', label: 'أثاث وعفش', shirt: 0x8d5a97, tipMul: 1.3, impatience: 1.0, bumpSens: 2.0, names: ['أستاذة هالة (نقل عفش)', 'مستر كريم', 'الحاجة نعمة'] },
+  { id: 'fridge', icon: '🧊', label: 'تلاجات وغسالات', shirt: 0x5fa8d3, tipMul: 1.1, impatience: 1.2, bumpSens: 2.4, names: ['معرض النور', 'محلات العمدة', 'أبو يوسف للأجهزة'] },
+  { id: 'parcel', icon: '📦', label: 'طرود وشحنات', shirt: 0xe9a23b, tipMul: 1.0, impatience: 1.8, bumpSens: 1.0, names: ['شركة الشحن السريع', 'متجر أونلاين', 'مخزن الميناء'] },
+];

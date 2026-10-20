@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b1226">
-  <meta name="description" content="أجرة الكورنيش: لعبة سواقة تاكسى 3D بتتلعب من المتصفح. وصّل الركاب، اكسب فلوس، واشترى عربيتك.">
-  <title>أجرة الكورنيش</title>
+  <meta name="description" content="على القمة: لعبة سواقة تاكسى 3D بتتلعب من المتصفح. وصّل الركاب، اكسب فلوس، واشترى عربيتك.">
+  <title>على القمة</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -37,6 +37,7 @@
     <div id="flash" class="flash hidden">📸</div>
   </div>
 
+  <div id="race-lobby" class="hidden"></div>
   <div id="toasts"></div>
 
   <!-- ========== أزرار اللمس ========== -->
@@ -65,7 +66,7 @@
   <section id="screen-menu" class="screen">
     <div class="panel menu">
       <div class="logo">🚖</div>
-      <h1>أجرة الكورنيش</h1>
+      <h1>على القمة</h1>
       <p class="sub">سواق على طرق إسكندرية. وصّل الركاب، اجمع فلوس، لوّن عربيتك واشتريها.</p>
       <div class="status" id="menu-status"></div>
       <button class="btn primary" id="m-start">جهّز الوردية وابدأ</button>
@@ -86,7 +87,7 @@
 
   <!-- ========== الجراج ========== -->
   <section id="screen-garage" class="screen full hidden">
-    <div class="stage" style="--ar:1.8329"><img class="stage-bg" src="assets/images/bg/garage.webp" alt=""><div class="stage-car" id="g-car" style="--cw:25%;--cb:14%"></div></div>
+    <div class="stage"><picture><source media="(orientation: portrait)" srcset="assets/images/bg/garage-m.webp"><img class="stage-bg" src="assets/images/bg/garage.webp" alt=""></picture><div class="stage-car" id="g-car" style="--cw:25%;--cb:14%"></div></div>
     <div class="topbar">
       <button class="btn round" id="g-back" aria-label="رجوع">➜</button>
       <div class="tabs" id="g-tabs">
@@ -103,7 +104,7 @@
 
   <!-- ========== الورشة ========== -->
   <section id="screen-workshop" class="screen full hidden">
-    <img class="stage-fill" src="assets/images/bg/workshop.webp" alt=""><div class="stage" style="--ar:1.3274"><img class="stage-bg" src="assets/images/bg/workshop.webp" alt=""><div class="stage-car" id="ws-room" style="--cw:30%;--cb:7%"></div></div>
+    <picture><source media="(orientation: portrait)" srcset="assets/images/bg/workshop-m.webp"><img class="stage-fill" src="assets/images/bg/workshop.webp" alt=""></picture><div class="stage"><picture><source media="(orientation: portrait)" srcset="assets/images/bg/workshop-m.webp"><img class="stage-bg" src="assets/images/bg/workshop.webp" alt=""></picture><div class="stage-car" id="ws-room" style="--cw:30%;--cb:7%"></div></div>
     <div class="topbar">
       <button class="btn round" id="w-back" aria-label="رجوع">➜</button>
       <div class="tabs" id="ws-tabs">

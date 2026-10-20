@@ -9,6 +9,9 @@ import { PlayerCar } from './car.js';
 import { Traffic } from './traffic.js';
 import { Rides } from './rides.js';
 import { lookIds, defaultLook } from './car-images.js';
+import { priceMul } from './data.js';
+import { OnlineRace } from './online.js';
+import { LANE_X } from './world.js';
 import { Input } from './input.js';
 import { Sfx } from './sfx.js';
 import { UI } from './ui.js';
@@ -18,7 +21,7 @@ import {
   getCar, HORNS, getHorn, getKind, getTime, getColor, colorKey, getAcc, stickerById, SLOGAN_PRICE, modBonus, getBoss, getRentVehicle, pick, clamp, fmtMoney, fmtTime,
 } from './data.js';
 
-const GAME_NAME_LOCAL = 'أجرة الكورنيش';
+const GAME_NAME_LOCAL = 'على القمة';
 const IS_TOUCH = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const newShift = () => ({
   t: SHIFT_SECONDS, fares: 0, tips: 0, fines: 0, rides: 0, people: 0, perfect: 0, crashes: 0, radarOk: 0, km: 0, bestTip: 0, over: false,
@@ -58,6 +61,8 @@ class Game {
     this.ui = new UI(this);
     this.cloud = new Cloud(this);
     this.cloud.onChange = () => this.ui.renderAccount();
+    this.online = new OnlineRace(this.cloud);
+    this.online.onRoom = (r) => this.onRoomUpdate(r);
 
     this.mode = 'menu';
     this.previewId = this.state.selected;
@@ -100,6 +105,11 @@ class Game {
     this.ui.renderMenu();
     this.ui.show('menu');
     if (this.refMsg) this.ui.toast(this.refMsg, 'gold');
+    const rc = (new URLSearchParams(location.search).get('race') || '').toUpperCase().trim();
+    if (/^[A-Z0-9]{6}$/.test(rc)) {
+      this.pendingJoin = rc;
+      setTimeout(() => { this.openRoads(); this.state.work.kind = 'race'; this.wiz.step = 'opp'; this.ui.renderSetup(); this.ui.toast('اتدعيت لسباق! سجّل دخول (لو لسه) ثم دوس "ادخل"', 'gold'); }, 1200);
+    }
 
     this.cloud.init();
     this.last = performance.now();
@@ -139,10 +149,10 @@ class Game {
       const base = getCar(job.carId);
       return { ...base, id, name: `${base.name} (${job.ownerName})`, rented: false, fee: 0, job };
     }
-    const base = getCar(id);
+    let base = getCar(id);
     if (base && this.state.owned.includes(id)) {
       const b = modBonus(this.state.mods[id]);
-      if (b) return { ...base, fareMul: (base.fareMul || 1) * (1 + b) };
+      base = { ...base, fareMul: (base.fareMul || 1) * priceMul(base.price || 0) * (1 + (b || 0)) };
     }
     return base;
   }
@@ -325,7 +335,7 @@ class Game {
 
   resetPlayFlags() {
     this.timeTheme = null;
-    this.utHint = null;
+    this.utHint = null; this.radarHint = null;
     this.race = null;
     this.opp.root.visible = false;
     this.rides.disabled = false;
@@ -342,7 +352,7 @@ class Game {
     this.setPlayerCar(this.previewId);
     this.player.reset(40, 8.7);
     this.traffic.reset(40);
-    this.rides.reset();
+    this.rides.reset(); this.player.setLoaded(false);
     this.input.enabled = false;
     this.camReady = false;
     this.ui.showHud(false, false);
@@ -433,6 +443,11 @@ class Game {
     } else if (a === 'opp') {
       wz.opp = v;
       wz.step = 'road';
+    } else if (a === 'online') {
+      if (!this.online.ready()) { this.ui.toast('السباق الأونلاين محتاج تسجّل دخول بحسابك الأول (من قايمة الحساب)', 'bad'); return; }
+      if (v === 'join') return this.onlineJoin((document.getElementById('race-code') || {}).value);
+      wz.opp = 'online';
+      wz.step = 'road';
     } else if (a === 'next') wz.step = 'road';
     else if (a === 'time') w.time = v;
     else if (a === 'boss') return this.setBoss(v);
@@ -487,6 +502,7 @@ class Game {
 
   startFromSetup() {
     this.applyRoad();
+    if (getKind(this.state.work.kind).race && this.wiz && this.wiz.opp === 'online') return this.onlineCreate();
     this.onStartClick();
   }
 
@@ -728,7 +744,7 @@ class Game {
     const spec0 = this.validSelected();
     if (st.owned.includes(spec0.id) && !spec0.rented) this.player.damage = st.damage[spec0.id] || 0;
     this.traffic.reset(0);
-    this.rides.reset();
+    this.rides.reset(); this.player.setLoaded(false);
     this.shift = newShift();
     if (this.road.free || kind.race || kind.id === 'joy') this.shift.t = Infinity;
     this.shift.free = !!this.road.free;
@@ -753,20 +769,133 @@ class Game {
     else this.ui.toast(this.road.free ? '🛣️ شغل حر: وصّل 3 أفراد لمسافات بعيدة' : `${this.road.tagIcon} ${this.road.name} · ${this.road.fare} جنيه للفرد`, 'gold');
   }
 
+  // ---------- السباق الأونلاين ----------
+  raceInfo() {
+    const st = this.state;
+    const c = this.carSpec(st.selected) || getCar('sedan');
+    return { name: st.name || '', car: { id: c.id.startsWith('job:') ? c.body : c.id, body: c.body, name: c.name, look: this.carLook(st.selected), vmax: c.vmax, accel: c.accel, brake: c.brake, handling: c.handling, cat: c.cat || 'private' } };
+  }
+
+  async onlineCreate() {
+    try {
+      const info = this.raceInfo();
+      const code = await this.online.create({ ...info, roadId: this.road.id, finish: 2200 });
+      this.lobbyShow();
+      this.ui.toast('الغرفة اتعملت ✅ ابعت الكود لصاحبك', 'good');
+      return code;
+    } catch (e) { this.ui.toast((e && e.message) || 'مقدرتش أعمل غرفة', 'bad'); }
+  }
+
+  async onlineJoin(code) {
+    try {
+      const r = await this.online.join(code, this.raceInfo());
+      this.state.selectedRoad = r.roadId;
+      this.applyRoad();
+      this.lobbyShow();
+    } catch (e) { this.ui.toast((e && e.message) || 'مقدرتش أدخل الغرفة', 'bad'); }
+  }
+
+  lobbyShow() {
+    const el = document.getElementById('race-lobby');
+    const o = this.online, r = o.room;
+    const host = o.role === 'host';
+    let body;
+    if (!r) body = '<p>بنجهّز الغرفة…</p>';
+    else if (host) {
+      body = `<p>كود الغرفة (ابعته لصاحبك):</p><div class="rl-code">${o.code}</div>
+        <button class="btn" id="rl-copy">📋 انسخ اللينك</button>
+        <p class="rl-st">${r.guestUid ? '✅ ' + (r.guestName || 'صاحبك') + ' دخل بـ ' + (r.guestCar ? r.guestCar.name : '') : '⏳ مستنى صاحبك يدخل…'}</p>
+        <button class="btn primary" id="rl-go" ${r.guestUid ? '' : 'disabled'}>🏁 ابدأ السباق</button>`;
+    } else body = `<p>دخلت غرفة <b>${r.hostName || ''}</b> على ${(getRoad(r.roadId) || {}).name || ''}</p><p class="rl-st">⏳ مستنى صاحبك يبدأ السباق…</p>`;
+    el.innerHTML = `<div class="rl-box"><h3>🏁 سباق أونلاين</h3>${body}<button class="btn" id="rl-x">إلغاء</button></div>`;
+    el.classList.remove('hidden');
+    const q = (id) => document.getElementById(id);
+    if (q('rl-copy')) q('rl-copy').onclick = () => { const t = o.link; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => this.ui.toast('اتنسخ اللينك ✅', 'good')).catch(() => this.ui.toast(t, '')); };
+    if (q('rl-go')) q('rl-go').onclick = () => o.start();
+    q('rl-x').onclick = () => { o.leave(); this.lobbyHide(); };
+  }
+
+  lobbyHide() { document.getElementById('race-lobby').classList.add('hidden'); }
+
+  onRoomUpdate(r) {
+    const o = this.online;
+    if (!r) { if (o.code && !this.race) { this.lobbyHide(); this.ui.toast('الغرفة اتقفلت', 'bad'); o.leave(); } return; }
+    if (r.status === 'racing' && !this.race && this.mode !== 'playing') {
+      this.lobbyHide();
+      this.state.work.kind = 'race';
+      this.state.selectedRoad = r.roadId;
+      this.wiz = this.wiz || { step: 'road', opp: null };
+      this.wiz.opp = 'online';
+      this.applyRoad();
+      this.startShift();
+    } else if (!this.race && !document.getElementById('race-lobby').classList.contains('hidden')) this.lobbyShow();
+  }
+
   startRace() {
     const st = this.state;
-    const oc = getCar(this.wiz.opp) || getCar('sedan');
-    this.opp.setSpec({ ...oc, vmax: oc.vmax * 0.97 }, defaultLook(oc.body), null);
+    const online = this.wiz && this.wiz.opp === 'online' && this.online.code;
+    let oc, oppName;
+    if (online) {
+      const rc = this.online.role === 'host' ? this.online.room.guestCar : this.online.room.hostCar;
+      oc = { ...(getCar(rc.id) || getCar('sedan')), ...rc, rented: false };
+      oppName = (this.online.role === 'host' ? this.online.room.guestName : this.online.room.hostName) || 'صاحبك';
+      this.opp.setSpec(oc, rc.look || defaultLook(oc.body), null);
+    } else {
+      oc = getCar(this.wiz.opp) || getCar('sedan');
+      oppName = oc.name;
+      this.opp.setSpec({ ...oc, vmax: oc.vmax * 0.97 }, defaultLook(oc.body), null);
+    }
     this.opp.reset(0, 1.6);
     this.opp.root.visible = true;
-    this.race = { finish: 2200, cd: 4, go: false, done: false, last: 4, oppName: oc.name };
-    this.ui.toast(`🏁 ${this.carSpec(st.selected).name} ضد ${oc.name}`, 'gold');
+    this.race = { finish: 2200, cd: online ? 5 : 4, go: false, done: false, last: 4, oppName, online: !!online, limit: online ? (this.online.room.limit || 150) : 150, t: 0, aiX: 1.6, aiLaneT: 0, oppFinT: null };
+    this.traffic.extra = [this.opp];
+    this.ui.toast(`🏁 ${this.carSpec(st.selected).name} ضد ${oppName}`, 'gold');
+  }
+
+  // الكمبيوتر بيحترم العربيات: بيفرمل ويغيّر الحارة ويعدّى من غير ما يخترق حد
+  aiDrive(dt) {
+    const r = this.race, o = this.opp;
+    const cars = this.traffic.cars;
+    const look = 12 + o.v * 1.3;
+    const ahead = (x) => {
+      let best = null;
+      for (const c of cars) {
+        if (Math.abs(c.x - x) < 2.6 && c.s > o.s - 2) {
+          const gap = c.s - o.s - (c.model.l + o.l) / 2;
+          if (gap < look && (!best || gap < best.gap)) best = { c, gap };
+        }
+      }
+      return best;
+    };
+    r.aiLaneT -= dt;
+    const blk = ahead(r.aiX);
+    if (blk && r.aiLaneT <= 0 && blk.gap < look) {
+      let pick = null;
+      const cur = LANE_X.reduce((bi, x, i) => (Math.abs(x - r.aiX) < Math.abs(LANE_X[bi] - r.aiX) ? i : bi), 0);
+      for (const d of [1, -1, 2, -2]) {
+        const li = cur + d;
+        if (li < 0 || li > 3) continue;
+        const free = !cars.some((c) => Math.abs(c.x - LANE_X[li]) < 2.8 && c.s > o.s - 10 && c.s < o.s + look + 8) &&
+          !(Math.abs(this.player.x - LANE_X[li]) < 2.6 && Math.abs(this.player.s - o.s) < 9);
+        if (free) { pick = li; break; }
+      }
+      if (pick != null) { r.aiX = LANE_X[pick]; r.aiLaneT = 1.8; }
+    }
+    const b2 = ahead(r.aiX);
+    let throttle = 1, brake = 0;
+    if (b2) {
+      const safe = 5 + Math.max(0, o.v - b2.c.v) * 1.1;
+      if (b2.gap < safe) { throttle = 0; brake = b2.gap < safe * 0.5 ? 1 : 0.5; }
+      else if (o.v > b2.c.v + 1 && b2.gap < safe * 1.6) throttle = 0.3;
+    }
+    o.update(dt, { throttle, brake, reverse: 0, steer: clamp((r.aiX - o.x) * 0.3, -0.35, 0.35) }, { steer: 1, brakeSens: 1 });
   }
 
   updateRace(dt) {
     const r = this.race;
     const p = this.player;
     const o = this.opp;
+    const now = performance.now();
     if (!r.go) {
       r.cd -= dt;
       const n = Math.ceil(r.cd - 0.5);
@@ -780,22 +909,55 @@ class Game {
       }
       o.sync(0);
     } else {
-      o.update(dt, { throttle: 1, brake: 0, reverse: 0, steer: clamp((1.6 - o.x) * 0.3, -0.3, 0.3) }, { steer: 1, brakeSens: 1 });
+      r.t += dt;
+      if (r.online) {
+        const os = this.online.oppState();
+        if (os) {
+          const age = Math.min(0.6, (Date.now() - (this.online.room[this.online.opp + 'T'] || Date.now())) / 1000 || 0);
+          const ts = os.s + os.v * age;
+          o.s += (ts - o.s) * Math.min(1, dt * 6);
+          o.x += (os.x - o.x) * Math.min(1, dt * 8);
+          o.v = os.v;
+          o.sync(dt);
+          if (os.fin != null && r.oppFinT == null) r.oppFinT = os.fin;
+        }
+        this.online.push(p.s, p.x, p.v, now);
+      } else this.aiDrive(dt);
     }
     const left = Math.max(0, Math.round(r.finish - p.s));
-    this.utHint = r.go ? `🏁 ${p.s >= o.s ? 'انت قدامه' : 'هو قدامك'} بـ ${Math.abs(Math.round(p.s - o.s))} م · باقى ${left} م` : 'استعد…';
-    if (r.go && !r.done && (p.s >= r.finish || o.s >= r.finish)) {
+    const rem = Math.max(0, r.limit - r.t);
+    const clock = `${Math.floor(rem / 60)}:${String(Math.floor(rem % 60)).padStart(2, '0')}`;
+    this.utHint = r.go ? `🏁 ${p.s >= o.s ? 'انت قدامه' : 'هو قدامك'} بـ ${Math.abs(Math.round(p.s - o.s))} م · باقى ${left} م · ⏱ ${clock}` : 'استعد…';
+    if (!r.go || r.done) return;
+    if (r.online) {
+      if (p.s >= r.finish && r.myFin == null) { r.myFin = Math.round(r.t * 1000); this.online.finish(r.myFin); r.finWait = 1.2; }
+      if (r.myFin != null) r.finWait -= dt;
+      if (r.oppFinT != null && r.myFin == null) { r.done = true; return this.endRace(false, r.oppFinT / 1000); }
+      if (r.myFin != null && (r.finWait <= 0 || r.oppFinT != null)) { r.done = true; return this.endRace(r.oppFinT == null || r.myFin <= r.oppFinT, r.myFin / 1000); }
+      if (r.t >= r.limit) { r.done = true; return this.endRace(p.s >= o.s, null, true); }
+    } else if (p.s >= r.finish || o.s >= r.finish) {
       r.done = true;
-      this.endRace(p.s >= o.s);
+      this.endRace(p.s >= o.s, p.s >= r.finish ? r.t : null);
+    } else if (r.t >= r.limit) {
+      r.done = true;
+      this.endRace(false, null, true);
     }
   }
 
-  endRace(win) {
+  endRace(win, myTime, timeUp) {
     if (this.mode === 'summary') return;
     const st = this.state;
     const name = this.race ? this.race.oppName : '';
     const reward = win ? 800 : 100;
+    const wasOnline = this.race && this.race.online;
+    let best = null;
+    if (myTime != null && win) {
+      st.raceBest = st.raceBest || {};
+      const prev = st.raceBest[this.road.id];
+      if (prev == null || myTime < prev) { st.raceBest[this.road.id] = myTime; best = true; }
+    }
     this.mode = 'summary';
+    this.traffic.extra = null;
     this.input.clear();
     this.input.enabled = false;
     this.sfx.engineOff();
@@ -806,15 +968,13 @@ class Game {
     st.money += reward;
     st.day += 1;
     this.save();
-    this.ui.showSummary({
-      title: win ? 'كسبت السباق 🏆' : 'خسرت السباق… جرّب تانى',
-      rows: [
-        { label: 'ضد', value: name },
-        { label: win ? 'جايزة الفوز' : 'مكافأة المشاركة', value: '+' + fmtMoney(reward), cls: 'pos' },
-        { label: 'رصيدك دلوقتى', value: fmtMoney(st.money) + ' جنيه', cls: 'total' },
-      ],
-      extras: [],
-    });
+    const fmtT = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+    const rows = [{ label: 'ضد', value: name }];
+    if (myTime != null) rows.push({ label: 'وقتك', value: fmtT(myTime) + (best ? ' 🏅 رقم قياسى' : '') });
+    if (timeUp) rows.push({ label: 'الوقت', value: 'انتهى قبل النهاية ⏱' });
+    rows.push({ label: win ? 'جايزة الفوز' : 'مكافأة المشاركة', value: '+' + fmtMoney(reward), cls: 'pos' }, { label: 'رصيدك دلوقتى', value: fmtMoney(st.money) + ' جنيه', cls: 'total' });
+    this.ui.showSummary({ title: win ? 'كسبت السباق 🏆' : timeUp ? 'الوقت خلص ⏱' : 'خسرت السباق… جرّب تانى', rows, extras: [] });
+    if (wasOnline) { this.online.leave(); if (this.wiz) this.wiz.opp = null; }
     this.previewId = st.selected;
     this.enterPreviewKeepSummary();
     this.world.setTheme(this.theme);
@@ -958,7 +1118,7 @@ class Game {
     this.setPlayerCar(this.previewId);
     this.player.reset(40, 8.7);
     this.traffic.reset(40);
-    this.rides.reset();
+    this.rides.reset(); this.player.setLoaded(false);
     this.camReady = false;
   }
 
@@ -981,11 +1141,13 @@ class Game {
     const s = this.shift;
     if (ev.type === 'boarded') {
       this.sfx.pickup();
+      if (ev.ride.cargo) this.player.setLoaded(true);
       this.ui.toast(`${ev.ride.type.icon} ${ev.ride.name}: ${boardLine(ev.ride)}`, 'good');
     } else if (ev.type === 'delivered') {
       const r = ev.result;
       s.rides++;
-      s.people += ev.ride.group;
+      if (!ev.ride.cargo) s.people += ev.ride.group;
+      this.player.setLoaded(false);
       s.fares += r.fare;
       s.tips += r.tip;
       s.bestTip = Math.max(s.bestTip, r.tip);
@@ -1000,8 +1162,9 @@ class Game {
     } else if (ev.type === 'chatter') {
       this.ui.toast(`${ev.ride.type.icon} ${ev.ride.name}: ${chatterLine(ev.ride, this.road.id)}`, '');
     } else if (ev.type === 'missedPickup') {
-      this.ui.toast('😕 فاتك الراكب! فى غيره', 'bad');
+      this.ui.toast(ev.ride.cargo ? '😕 فاتتك الشحنة! فى غيرها' : '😕 فاتك الراكب! فى غيره', 'bad');
     } else if (ev.type === 'missedDest') {
+      this.player.setLoaded(false);
       s.fares += ev.result.fare;
       this.sfx.fine();
       this.ui.toast(`🙁 عدّيت المكان! الراكب نزل ودفع ${ev.result.fare} ج بس`, 'bad');
@@ -1031,7 +1194,8 @@ class Game {
     if (ahead < 230) {
       const lim = roadRadarLimit(this.road, this.nextRadar);
       this.ui.setLimit(lim, kmh > lim + 4);
-    } else this.ui.setLimit(null);
+      this.radarHint = ahead < 200 ? `⚠️ إنذار: رادار بعد ${Math.round(ahead / 10) * 10} م · الحد ${lim} كم/س` : null;
+    } else { this.ui.setLimit(null); this.radarHint = null; }
   }
 
   // ---------- الحلقة الرئيسية ----------
@@ -1187,7 +1351,7 @@ class Game {
       this.traffic.setRoad(nr);
       this.rides.setRoad(nr);
       this.traffic.reset(p.s);
-      this.rides.reset();
+      this.rides.reset(); this.player.setLoaded(false);
       this.nextRadar = nextRadarIndex(nr, p.s);
       p.x = 3.4;
       p.vx = 0;
@@ -1247,7 +1411,7 @@ class Game {
       card = {
         icon: c.type.icon,
         title: `${c.name} مستنيك → ${c.place}`,
-        sub: `${c.type.label}${c.group > 1 ? ' · ' + c.group + ' أفراد' : ''} · ${Math.max(0, Math.round(ds))} م قدامك`,
+        sub: `${c.type.label}${c.cargo ? ' · شحنة' : c.group > 1 ? ' · ' + c.group + ' أفراد' : ''} · ${Math.max(0, Math.round(ds))} م قدامك`,
         bar: r.holdT / 1.4,
         barClass: 'gold',
         line: 'الراكب على الرصيف اليمين. وقّف جنبه.',
@@ -1264,7 +1428,7 @@ class Game {
       card = {
         icon: c.type.icon,
         title: `${c.name} ← ${c.place}`,
-        sub: `${c.group > 1 ? c.group + ' أفراد · ' : ''}باقى ${Math.max(0, Math.round(ds))} م · ${rem >= 0 ? fmtTime(rem) : 'اتأخرت!'} · الأجرة ${fmtMoney(c.baseFare)} ج`,
+        sub: `${c.cargo ? '' : c.group > 1 ? c.group + ' أفراد · ' : ''}باقى ${Math.max(0, Math.round(ds))} م · ${rem >= 0 ? fmtTime(rem) : 'اتأخرت!'} · الأجرة ${fmtMoney(c.baseFare)} ج`,
         bar: inZone ? r.holdT / 1.2 : rem / c.limit,
         barClass: inZone ? 'gold' : rem / c.limit < 0.25 ? 'warn' : '',
         line: rem >= 0 ? 'سوق بنعومة: البقشيش على قد الراحة والسرعة.' : 'الأجرة بتقل كل ما بتتأخر.',
@@ -1277,8 +1441,8 @@ class Game {
     } else if (!s.over) {
       card = { icon: '🔎', title: 'بدوّر على راكب…', sub: `كمّل سواقة على ${this.road.name}`, bar: 0, line: '' };
     }
-    ui.setCard(card);
-    ui.setHint(hint || this.utHint || null);
+    ui.setCard(this.race ? null : card);
+    ui.setHint(hint || this.utHint || this.radarHint || null);
   }
 }
 
