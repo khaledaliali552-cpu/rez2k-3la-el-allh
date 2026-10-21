@@ -43,4 +43,4 @@ export function lookFor(body, colorId) {
   const L = LOOKS[body] || LOOKS.sedan;
   return L.looks[colorId] || L.looks[L.def];
 }
-export const cardImage = (body, colorId) => CAR_IMAGE_DIR + lookFor(body, colorId).card + '.webp';
+export const cardImage = (body, colorId) => CAR_IMAGE_DIR + lookFor(body, colorId).card + '.webp?v=15';

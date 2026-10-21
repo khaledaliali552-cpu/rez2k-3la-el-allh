@@ -65,7 +65,7 @@ let shadowGeo = null;
 function material(name) {
   let m = mats.get(name);
   if (!m) {
-    const tex = loader.load(DIR + name + '.webp');
+    const tex = loader.load(DIR + name + '.webp?v=15');
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
     m = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.06, side: THREE.DoubleSide });
@@ -179,7 +179,7 @@ function neonMaterial(name) {
     m.visible = true;
     m.needsUpdate = true;
   };
-  img.src = DIR + name + '.webp';
+  img.src = DIR + name + '.webp?v=15';
   neonMats.set(name, m);
   return m;
 }
